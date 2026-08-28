@@ -71,9 +71,22 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
         if (amountStr != null) {
           final amount = double.tryParse(amountStr) ?? 0.0;
           final name = line.replaceAll(amountStr, '').trim();
+          final lowerName = name.toLowerCase();
           
-          if (name.toLowerCase().contains('total')) {
-            total = amount;
+          if (lowerName.contains('total') || lowerName.contains('amount due') || lowerName.contains('balance')) {
+            if (amount > total) {
+              total = amount;
+            }
+          } else if (lowerName.contains('tax') || 
+                     lowerName.contains('tip') || 
+                     lowerName.contains('cash') || 
+                     lowerName.contains('change') || 
+                     lowerName.contains('visa') || 
+                     lowerName.contains('mastercard') || 
+                     lowerName.contains('paid') ||
+                     lowerName.contains('card')) {
+            // Ignore these receipt footers
+            continue;
           } else if (name.isNotEmpty) {
             items.add({'name': name, 'amount': amount, 'id': DateTime.now().microsecondsSinceEpoch.toString()});
           }

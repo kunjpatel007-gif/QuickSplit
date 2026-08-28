@@ -150,30 +150,39 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
       _status = 'Discovering nearby devices…';
     });
 
-    await Nearby().startDiscovery(
-      localName,
-      _strategy,
-      serviceId: _serviceId,
-      onEndpointFound: (endpointId, name, serviceId) {
-        Nearby().requestConnection(
-          localName,
-          endpointId,
-          onConnectionInitiated: _onConnectionInitiated,
-          onConnectionResult: (id, status) {
-            if (status == Status.CONNECTED) {
-              setState(() => _status = 'Connected! Exchanging profiles…');
-              _sendMyProfile(id);
-            } else {
-              setState(() => _status = 'Connection result: $status');
-            }
-          },
-          onDisconnected: (id) => _onDisconnected(),
-        );
-      },
-      onEndpointLost: (endpointId) {
-        setState(() => _status = 'A nearby device went out of range.');
-      },
-    );
+    try {
+      await Nearby().startDiscovery(
+        localName,
+        _strategy,
+        serviceId: _serviceId,
+        onEndpointFound: (endpointId, name, serviceId) {
+          Nearby().requestConnection(
+            localName,
+            endpointId,
+            onConnectionInitiated: _onConnectionInitiated,
+            onConnectionResult: (id, status) {
+              if (status == Status.CONNECTED) {
+                setState(() => _status = 'Connected! Exchanging profiles…');
+                _sendMyProfile(id);
+              } else {
+                setState(() => _status = 'Connection result: $status');
+              }
+            },
+            onDisconnected: (id) => _onDisconnected(),
+          );
+        },
+        onEndpointLost: (endpointId) {
+          setState(() => _status = 'A nearby device went out of range.');
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isBusy = false;
+          _status = 'Discovery failed: $e\n\nMake sure Wi-Fi, Bluetooth, and Location are all turned ON.';
+        });
+      }
+    }
   }
 
   void _onConnectionInitiated(String endpointId, ConnectionInfo info) {

@@ -113,45 +113,52 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _logs.isEmpty
-              ? const EmptyState(
-                  icon: Icons.history,
-                  message: 'No audit records yet',
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadLogs,
-                  child: ListView.builder(
-                    itemCount: _logs.length,
-                    itemBuilder: (context, index) {
-                      final log = _logs[index];
-                      final color = _getActionColor(context, log.actionType);
-                      return StaggeredListItem(
-                        index: index,
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: color.withValues(alpha: 0.15),
-                            child: Icon(_getActionIcon(log.actionType),
-                                color: color, size: 20),
-                          ),
-                          title: Text(
-                            '${log.actionType} · Expense #${log.expenseId}',
-                            style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Text(
-                            DateFormatter.formatRelative(log.timestamp),
-                          ),
-                          trailing: Text(
-                            log.currentHash.substring(0, 8),
-                            style: tt.bodySmall?.copyWith(
-                              fontFamily: 'monospace',
-                              color: cs.onSurface.withValues(alpha: 0.6),
+          : RefreshIndicator(
+              onRefresh: _loadLogs,
+              child: _logs.isEmpty
+                  ? SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Container(
+                        height: MediaQuery.of(context).size.height * 0.7,
+                        alignment: Alignment.center,
+                        child: const EmptyState(
+                          icon: Icons.history,
+                          message: 'No audit records yet',
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _logs.length,
+                      itemBuilder: (context, index) {
+                        final log = _logs[index];
+                        final color = _getActionColor(context, log.actionType);
+                        return StaggeredListItem(
+                          index: index,
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: color.withValues(alpha: 0.15),
+                              child: Icon(_getActionIcon(log.actionType),
+                                  color: color, size: 20),
+                            ),
+                            title: Text(
+                              '${log.actionType} · Expense #${log.expenseId}',
+                              style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: Text(
+                              DateFormatter.formatRelative(log.timestamp),
+                            ),
+                            trailing: Text(
+                              log.currentHash.substring(0, 8),
+                              style: tt.bodySmall?.copyWith(
+                                fontFamily: 'monospace',
+                                color: cs.onSurface.withValues(alpha: 0.6),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                        );
+                      },
+                    ),
+            ),
     );
   }
 }
