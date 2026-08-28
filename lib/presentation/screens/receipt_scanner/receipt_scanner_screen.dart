@@ -117,12 +117,25 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
 
     List<ExpenseSplit> splits = [];
     
+    double assignedTotal = 0.0;
     _assignedItems.forEach((userId, items) {
-      final userTotal = items.fold<double>(0.0, (sum, item) => sum + item['amount']);
+      assignedTotal += items.fold<double>(0.0, (sum, item) => sum + item['amount']);
+    });
+
+    _assignedItems.forEach((userId, items) {
+      final userItemsTotal = items.fold<double>(0.0, (sum, item) => sum + item['amount']);
+      
+      // Calculate proportional share (including taxes/tips proportionally)
+      double finalAmountOwed = 0.0;
+      if (assignedTotal > 0) {
+        final ratio = userItemsTotal / assignedTotal;
+        finalAmountOwed = _totalAmount * ratio;
+      }
+
       splits.add(ExpenseSplit(
         expenseId: 0, 
         userId: userId,
-        amountOwed: userTotal,
+        amountOwed: finalAmountOwed,
       ));
     });
 
