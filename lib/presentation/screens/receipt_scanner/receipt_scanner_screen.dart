@@ -56,7 +56,40 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     if (pickedFile != null && _textRecognizer != null) {
       final inputImage = InputImage.fromFilePath(pickedFile.path);
       final recognizedText = await _textRecognizer!.processImage(inputImage);
-      _parseText(recognizedText.text);
+      
+      // Reconstruct text horizontally using bounding boxes
+      // ML Kit often reads column-by-column (all names, then all prices).
+      // We group them by Y-coordinate overlap to reconstruct the original rows.
+      List<TextLine> allLines = [];
+      for (var block in recognizedText.blocks) {
+        allLines.addAll(block.lines);
+      }
+      
+      allLines.sort((a, b) => a.boundingBox.top.compareTo(b.boundingBox.top));
+      
+      List<List<TextLine>> rows = [];
+      for (var line in allLines) {
+        bool added = false;
+        for (var row in rows) {
+          var rowMid = row.first.boundingBox.top + (row.first.boundingBox.height / 2);
+          if (line.boundingBox.top <= rowMid && line.boundingBox.bottom >= rowMid) {
+            row.add(line);
+            added = true;
+            break;
+          }
+        }
+        if (!added) {
+          rows.add([line]);
+        }
+      }
+      
+      StringBuffer reconstructedText = StringBuffer();
+      for (var row in rows) {
+        row.sort((a, b) => a.boundingBox.left.compareTo(b.boundingBox.left));
+        reconstructedText.writeln(row.map((e) => e.text).join(' '));
+      }
+      
+      _parseText(reconstructedText.toString());
     }
   }
 
@@ -88,6 +121,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
                      lowerName.contains('visa') || 
                      lowerName.contains('mastercard') || 
                      lowerName.contains('paid') ||
+                     lowerName.contains('tend') ||
                      lowerName.contains('card')) {
             // Payment method lines — ignore entirely
             continue;
