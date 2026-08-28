@@ -61,17 +61,17 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
       bool btScanGranted = (statuses[Permission.bluetoothScan]?.isGranted ?? false) || (statuses[Permission.bluetoothScan]?.isRestricted ?? true);
       bool btAdvGranted = (statuses[Permission.bluetoothAdvertise]?.isGranted ?? false) || (statuses[Permission.bluetoothAdvertise]?.isRestricted ?? true);
       bool btConnGranted = (statuses[Permission.bluetoothConnect]?.isGranted ?? false) || (statuses[Permission.bluetoothConnect]?.isRestricted ?? true);
-
-      // We only strictly validate Location, as it is the only universal permission for Nearby across all Android versions.
-      // The modern Bluetooth permissions will automatically pass the truthy check above if the OS is too old to support them.
-      if (!locationGranted || !btScanGranted || !btAdvGranted || !btConnGranted) {
+      // We safely bypass strict verification of Bluetooth/Wi-Fi permissions here because
+      // older Android versions (11, 12) report them as permanentlyDenied since they don't exist.
+      // The .request() call above successfully prompts the user natively on Android 13+.
+      if (!locationGranted) {
         if (!mounted) return false;
         await showDialog<void>(
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text('Permissions Denied'),
             content: const Text(
-              'Nearby Sync requires Location and Bluetooth permissions to function.\n\n'
+              'Nearby Sync requires Location, Bluetooth, and Nearby Devices (Wi-Fi) permissions to function.\n\n'
               'Please grant them in Settings to continue.',
             ),
             actions: [
@@ -93,7 +93,8 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
           title: const Text('Hardware Required'),
           content: const Text(
             'Permissions granted!\n\n'
-            'Please ensure your Location and Bluetooth toggles are physically turned ON before continuing.',
+            'Please ensure your Location, Bluetooth, and Wi-Fi toggles are physically turned ON before continuing. '
+            '(Android 13+ requires you to turn them on manually)',
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),

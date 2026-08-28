@@ -2,12 +2,14 @@ class ParsedExpense {
   final double? amount;
   final String? title;
   final String? category;
+  final String? payerName;
   final List<String> participants;
 
   const ParsedExpense({
     this.amount,
     this.title,
     this.category,
+    this.payerName,
     this.participants = const [],
   });
 }
@@ -66,10 +68,19 @@ class NlpParser {
       }
     }
 
+    // Extract payer (word before 'paid')
+    String? payerName;
+    final RegExp payerRegExp = RegExp(r'^([a-zA-Z]+)\s+paid\b', caseSensitive: false);
+    final Match? payerMatch = payerRegExp.firstMatch(input.trim());
+    if (payerMatch != null) {
+      payerName = payerMatch.group(1);
+    }
+
     return ParsedExpense(
       amount: amount,
       title: title,
       category: category,
+      payerName: payerName,
       participants: participants,
     );
   }

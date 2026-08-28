@@ -25,6 +25,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   String _category = AppConstants.categories.first;
   SplitMode _splitMode = SplitMode.uniform;
   bool _isRecurring = false;
+  int? _payerId;
 
   Set<int> _selectedUserIds = {};
   final Map<int, TextEditingController> _specificControllers = {};
@@ -35,10 +36,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   void initState() {
     super.initState();
+    _splitMode = SplitMode.uniform;
+    _category = AppConstants.categories.first;
     _nlpController.addListener(_onNlpChanged);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final users = context.read<UserProvider>().users;
+
+    Future.microtask(() {
+      final userProvider = context.read<UserProvider>();
+      final users = userProvider.users;
       setState(() {
+        _payerId = userProvider.currentUser?.id;
         _selectedUserIds = users.map((u) => u.id!).toSet();
         for (var u in users) {
           _specificControllers[u.id!] = TextEditingController();
@@ -60,6 +66,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       }
       if (parsed.category != null) {
         _category = parsed.category!;
+      }
+      if (parsed.payerName != null && parsed.payerName!.isNotEmpty) {
+        final users = context.read<UserProvider>().users;
+        final matchedUser = users.where((u) => 
+          u.name.toLowerCase() == parsed.payerName!.toLowerCase()
+        ).firstOrNull;
+        if (matchedUser != null) {
+          _payerId = matchedUser.id;
+        }
       }
     });
   }
@@ -119,6 +134,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       return;
     }
 
+    if (_payerId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select who paid')),
+      );
+      return;
+    }
+
     final amount = double.parse(_amountController.text);
     final splitEngine = SplitEngine();
 
@@ -130,11 +152,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       isRecurring: _isRecurring,
     );
 
-    final currentUser = context.read<UserProvider>().currentUser;
     final payers = [
       ExpensePayer(
         expenseId: 0,
-        userId: currentUser!.id!,
+        userId: _payerId!,
         amountPaid: amount,
       ),
     ];
@@ -250,6 +271,26 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   _category = val!;
                 });
               },
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            DropdownButtonFormField<int>(
+              value: _payerId,
+              decoration: const InputDecoration(
+                labelText: 'Paid By',
+                prefixIcon: Icon(Icons.person),
+              ),
+              items: users.map((u) {
+                return DropdownMenuItem<int>(
+                  value: u.id,
+                  child: Text(u.name),
+                );
+              }).toList(),
+              onChanged: (val) {
+                setState(() {
+                  _payerId = val;
+                });
+              },
+              validator: (val) => val == null ? 'Select who paid' : null,
             ),
             const SizedBox(height: AppSpacing.lg),
             Text('Split Mode', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
