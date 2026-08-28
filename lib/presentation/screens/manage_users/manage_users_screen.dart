@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:campus_quicksplit/data/models/models.dart';
 import 'package:campus_quicksplit/domain/providers/providers.dart';
@@ -76,9 +77,24 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                     Text('Joined: ${DateFormat.yMMMd().format(user.createdAt)}', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
                   ],
                 ),
-                trailing: isCurrent 
-                    ? Icon(Icons.star, color: cs.tertiary) 
-                    : null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isCurrent && user.syncId.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.copy, size: 20),
+                        tooltip: 'Copy UUID',
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: user.syncId));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('UUID copied to clipboard')),
+                          );
+                        },
+                      ),
+                    if (isCurrent)
+                      Icon(Icons.star, color: cs.tertiary),
+                  ],
+                ),
                 isThreeLine: true,
                 onTap: () => _showEditUserDialog(user), // Changed to edit on tap
               );

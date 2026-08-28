@@ -22,7 +22,7 @@ class HceTapPayScreen extends StatefulWidget {
 }
 
 class _HceTapPayScreenState extends State<HceTapPayScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
 
@@ -39,6 +39,7 @@ class _HceTapPayScreenState extends State<HceTapPayScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -61,12 +62,6 @@ class _HceTapPayScreenState extends State<HceTapPayScreen>
     setState(() {
       _isHceAvailable = available;
     });
-
-    // Auto-prompt to open NFC settings if it is off when they open the screen
-    if (!available) {
-      HcePayService.openNfcSettings();
-      Future.delayed(const Duration(seconds: 3), _initHce);
-    }
   }
 
   Future<void> _startPaying() async {
@@ -251,7 +246,15 @@ class _HceTapPayScreenState extends State<HceTapPayScreen>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _initHce(); // Re-check NFC status when returning from settings
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
     HcePayService.stopBroadcasting();
     HcePayService.stopReading();
@@ -294,7 +297,6 @@ class _HceTapPayScreenState extends State<HceTapPayScreen>
                 FilledButton.icon(
                   onPressed: () {
                     HcePayService.openNfcSettings();
-                    Future.delayed(const Duration(seconds: 3), _initHce);
                   },
                   icon: const Icon(Icons.settings),
                   label: const Text('Turn on HCE (NFC) in Settings'),

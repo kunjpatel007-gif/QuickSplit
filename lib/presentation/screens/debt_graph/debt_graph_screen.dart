@@ -33,7 +33,6 @@ class DebtGraphScreen extends StatefulWidget {
 }
 
 class _DebtGraphScreenState extends State<DebtGraphScreen> with TickerProviderStateMixin {
-  bool _isSimplified = true;
   int? _selectedNodeId;
   late AnimationController _controller;
   late AnimationController _transitionController;
@@ -106,51 +105,11 @@ class _DebtGraphScreenState extends State<DebtGraphScreen> with TickerProviderSt
       return;
     }
     
-    List<DebtTransaction> transactions;
-    if (_isSimplified) {
-      transactions = DebtSimplifier().simplifyDebts(balances);
-    } else {
-      transactions = _getNaiveDebts(balances);
-    }
-    
+    List<DebtTransaction> transactions = DebtSimplifier().simplifyDebts(balances);
     _edges = transactions.map((tx) => Edge(tx.fromUserId, tx.toUserId, tx.amount)).toList();
   }
 
-  List<DebtTransaction> _getNaiveDebts(Map<int, double> balances) {
-    final debtors = balances.entries.where((e) => e.value < -0.01).toList();
-    final creditors = balances.entries.where((e) => e.value > 0.01).toList();
-    
-    debtors.sort((a, b) => a.value.compareTo(b.value));
-    creditors.sort((a, b) => b.value.compareTo(a.value));
 
-    List<DebtTransaction> transactions = [];
-    int i = 0, j = 0;
-    
-    List<MapEntry<int, double>> mDebtors = List.from(debtors);
-    List<MapEntry<int, double>> mCreditors = List.from(creditors);
-
-    while (i < mDebtors.length && j < mCreditors.length) {
-      double debt = -mDebtors[i].value;
-      double credit = mCreditors[j].value;
-      
-      double amount = debt < credit ? debt : credit;
-      
-      if (amount > 0.01) {
-        transactions.add(DebtTransaction(
-          fromUserId: mDebtors[i].key,
-          toUserId: mCreditors[j].key,
-          amount: amount,
-        ));
-      }
-      
-      mDebtors[i] = MapEntry(mDebtors[i].key, mDebtors[i].value + amount);
-      mCreditors[j] = MapEntry(mCreditors[j].key, mCreditors[j].value - amount);
-      
-      if (-mDebtors[i].value < 0.01) i++;
-      if (mCreditors[j].value < 0.01) j++;
-    }
-    return transactions;
-  }
 
   void _tick() {
     if (_nodes.isEmpty) return;
@@ -215,27 +174,6 @@ class _DebtGraphScreenState extends State<DebtGraphScreen> with TickerProviderSt
     return Scaffold(
       appBar: AppBar(
         title: const Text('Interactive Debt Graph'),
-        actions: [
-          Row(
-            children: [
-              const Text('Simplified'),
-              Switch(
-                value: _isSimplified,
-                onChanged: (val) async {
-                  if (_isSimplified == val) return;
-                  await _transitionController.reverse();
-                  setState(() {
-                    _isSimplified = val;
-                    final balances = context.read<BalanceProvider>().balances;
-                    _updateEdges(balances);
-                  });
-                  _transitionController.forward();
-                },
-              ),
-            ],
-          ),
-          const SizedBox(width: AppSpacing.lg),
-        ],
       ),
       body: _nodes.isEmpty
           ? const Center(child: Text('No debt data available'))

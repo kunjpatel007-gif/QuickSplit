@@ -259,60 +259,67 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
     return Consumer<ExpenseProvider>(
       builder: (context, provider, child) {
         final expenses = provider.expenses;
-        if (expenses.isEmpty) {
-          return const Center(child: Text('No expenses to share'));
-        }
         
-        return Column(
-          children: [
-            ElevatedButton.icon(
-              icon: const Icon(Icons.person_add),
-              label: const Text('Show My Profile QR'),
-              onPressed: () async {
-                final me = Provider.of<UserProvider>(context, listen: false).currentUser;
-                if (me != null) {
-                  final payload = [
-                    {
-                      'type': 'profile',
-                      'userName': me.name,
-                      'upiId': me.upiId,
-                      'phoneNumber': me.phoneNumber,
-                    }
-                  ];
-                  final base64String = base64Encode(utf8.encode(jsonEncode(payload)));
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('My Profile QR'),
-                      content: SizedBox(
-                        width: 250,
-                        height: 250,
-                        child: QrImageView(
-                          data: base64String,
-                          size: 250,
-                          backgroundColor: Theme.of(context).colorScheme.onSurface,
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.person_add),
+                label: const Text('Show My Profile QR'),
+                onPressed: () async {
+                  final me = Provider.of<UserProvider>(context, listen: false).currentUser;
+                  if (me != null) {
+                    final payload = [
+                      {
+                        'type': 'profile',
+                        'syncId': me.syncId,
+                        'userName': me.name,
+                        'upiId': me.upiId,
+                        'phoneNumber': me.phoneNumber,
+                      }
+                    ];
+                    final base64String = base64Encode(utf8.encode(jsonEncode(payload)));
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('My Profile QR'),
+                        content: SizedBox(
+                          width: 250,
+                          height: 250,
+                          child: QrImageView(
+                            data: base64String,
+                            size: 250,
+                            backgroundColor: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))
+                        ],
                       ),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))
-                      ],
-                    ),
-                  );
-                }
-              },
-            ),
-            const Divider(height: 32),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-              child: Text(
-                'To prevent database corruption and preserve audit logs, you can only sync your entire database history at once.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                    );
+                  }
+                },
               ),
-            ),
-            const SizedBox(height: 16),
-              FutureBuilder<String>(
-                future: _generatePayload(expenses),
+              const Divider(height: 32),
+              
+              if (expenses.isEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(child: Text('No expenses to share yet!')),
+                ),
+              ] else ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                  child: Text(
+                    'To prevent database corruption and preserve audit logs, you can only sync your entire database history at once.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FutureBuilder<String>(
+                  future: _generatePayload(expenses),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return const Padding(
@@ -343,7 +350,9 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
                   );
                 },
               ),
-          ],
+              ],
+            ],
+          ),
         );
       },
     );
@@ -364,10 +373,24 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
               itemCount: _scannedExpenses!.length,
               itemBuilder: (context, index) {
                 final item = _scannedExpenses![index];
-                return ListTile(
-                  title: Text(item['title']),
-                  trailing: Text(CurrencyFormatter.format(item['totalAmount'])),
-                );
+                final isProfile = item['type'] == 'profile';
+                final isExpense = item['type'] == 'expense' || item['type'] == null; // null for backward compatibility
+                
+                if (isProfile) {
+                  return ListTile(
+                    leading: const CircleAvatar(child: Icon(Icons.person)),
+                    title: Text(item['userName'] ?? 'Unknown Profile'),
+                    subtitle: const Text('Profile Data'),
+                  );
+                } else if (isExpense) {
+                  return ListTile(
+                    leading: const CircleAvatar(child: Icon(Icons.receipt)),
+                    title: Text(item['title'] ?? 'Unknown Expense'),
+                    trailing: Text(CurrencyFormatter.format(item['totalAmount'] ?? 0.0)),
+                  );
+                } else {
+                  return const SizedBox.shrink();
+                }
               },
             ),
           ),

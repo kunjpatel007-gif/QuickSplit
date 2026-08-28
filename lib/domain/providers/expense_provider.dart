@@ -166,4 +166,22 @@ class ExpenseProvider extends ChangeNotifier {
 
     await loadExpenses();
   }
+
+  Future<void> permanentlyDeleteExpense(int id) async {
+    final expense = await _expenseRepository.getExpenseById(id);
+    await _expenseRepository.permanentlyDeleteExpense(id);
+    
+    // Log the permanent deletion in the audit trail before the expense is gone forever
+    if (expense != null) {
+      final auditEntry = await _auditService.createAuditEntry(
+        expenseId: id,
+        actionType: 'PERMANENTLY_DELETED',
+        previousAmount: expense.totalAmount,
+        auditRepo: _auditRepository,
+      );
+      await _auditRepository.insertAuditLog(auditEntry);
+    }
+    
+    await loadExpenses();
+  }
 }

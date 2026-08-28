@@ -41,7 +41,44 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Recycle Bin')),
+      appBar: AppBar(
+        title: const Text('Recycle Bin'),
+        actions: [
+          if (_deletedExpenses.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep),
+              tooltip: 'Empty Recycle Bin',
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Empty Recycle Bin?'),
+                    content: const Text('This will permanently delete all items in the recycle bin.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: TextButton.styleFrom(foregroundColor: cs.error),
+                        child: const Text('Empty Bin')
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true && mounted) {
+                  for (var expense in _deletedExpenses) {
+                    await context.read<ExpenseProvider>().permanentlyDeleteExpense(expense.id!);
+                  }
+                  await _loadDeleted();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Recycle bin emptied')),
+                    );
+                  }
+                }
+              },
+            ),
+        ],
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _deletedExpenses.isEmpty
@@ -57,17 +94,48 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                       title: Text(expense.title),
                       subtitle: Text(
                           '${CurrencyFormatter.format(expense.totalAmount)} · ${DateFormatter.formatRelative(expense.timestamp)}'),
-                      trailing: IconButton(
-                        icon: Icon(Icons.restore, color: cs.primary),
-                        onPressed: () async {
-                          await context
-                              .read<ExpenseProvider>()
-                              .restoreExpense(expense.id!);
-                          await context
-                              .read<BalanceProvider>()
-                              .recalculateBalances();
-                          await _loadDeleted();
-                        },
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.restore, color: cs.primary),
+                            onPressed: () async {
+                              await context
+                                  .read<ExpenseProvider>()
+                                  .restoreExpense(expense.id!);
+                              await context
+                                  .read<BalanceProvider>()
+                                  .recalculateBalances();
+                              await _loadDeleted();
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete_forever, color: cs.error),
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Delete Forever?'),
+                                  content: const Text('This action cannot be undone and will permanently remove this expense from the database.'),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, true), 
+                                      style: TextButton.styleFrom(foregroundColor: cs.error),
+                                      child: const Text('Delete')
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true && mounted) {
+                                await context
+                                    .read<ExpenseProvider>()
+                                    .permanentlyDeleteExpense(expense.id!);
+                                await _loadDeleted();
+                              }
+                            },
+                          ),
+                        ],
                       ),
                     );
                   },

@@ -121,18 +121,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       floatingActionButton: _selectedIndex == 0
-          ? FloatingActionButton.large(
+          ? FloatingActionButton(
               onPressed: () async {
                 await Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const AddExpenseScreen()),
+                  MaterialPageRoute(builder: (_) => const AddExpenseScreen()),
                 );
                 if (mounted) {
                   await _loadData();
                 }
               },
-              child: const Icon(Icons.add),
+              child: const Icon(
+                Icons.add,
+                size: 28,
+              ), // Standard is 24, Large is 36. 75% of 36 = 27 (rounded to 28 for crisp rendering)
             )
           : null,
       bottomNavigationBar: BottomNavigationBar(
@@ -145,13 +147,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard), label: 'Dashboard'),
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.payment), label: 'Settlement'),
+            icon: Icon(Icons.payment),
+            label: 'Settlement',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.pie_chart), label: 'Analytics'),
+            icon: Icon(Icons.pie_chart),
+            label: 'Analytics',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.history), label: 'Audit Log'),
+            icon: Icon(Icons.history),
+            label: 'Audit Log',
+          ),
         ],
       ),
     );
@@ -181,24 +191,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ? const Center(child: Text('No balances yet.'))
                       : ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
                           itemCount: balances.length,
                           itemBuilder: (context, index) {
                             final userId = balances.keys.elementAt(index);
                             final balance = balances[userId] ?? 0;
                             final user = userProvider.getUserById(userId);
-                            final displayUser = user ??
+                            final displayUser =
+                                user ??
                                 User(
                                   name: 'User $userId',
                                   createdAt: DateTime.now(),
                                 );
                             return BalanceCard(
-                                user: displayUser, balance: balance);
+                              user: displayUser,
+                              balance: balance,
+                            );
                           },
                         ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
@@ -209,7 +226,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (_) => const DebtGraphScreen()),
+                                builder: (_) => const DebtGraphScreen(),
+                              ),
                             );
                           },
                         ),
@@ -223,7 +241,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (_) => const ProRataScreen()),
+                                builder: (_) => const ProRataScreen(),
+                              ),
                             );
                           },
                         ),
@@ -240,20 +259,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => const PresetsScreen()),
+                            builder: (_) => const PresetsScreen(),
+                          ),
                         );
                       },
                       child: const Text('Manage'),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                    ),
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: templateProvider.templates.map((template) {
                           return Padding(
-                            padding: const EdgeInsets.only(right: AppSpacing.sm),
+                            padding: const EdgeInsets.only(
+                              right: AppSpacing.sm,
+                            ),
                             child: ActionChip(
                               label: Text(template.title),
                               onPressed: () async {
@@ -265,25 +289,69 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   isRecurring: false,
                                   isDeleted: false,
                                 );
-                                final List<dynamic> parsedPayers = jsonDecode(template.payersJson);
-                                final List<dynamic> parsedSplits = jsonDecode(template.splitsJson);
-                                final payers = parsedPayers.map((e) => ExpensePayer(
-                                  expenseId: 0, userId: e['userId'], amountPaid: (e['amountPaid'] as num).toDouble(),
-                                )).toList();
-                                final splits = parsedSplits.map((e) => ExpenseSplit(
-                                  expenseId: 0, userId: e['userId'], amountOwed: (e['amountOwed'] as num).toDouble(),
-                                )).toList();
-                                final currentUser = context.read<UserProvider>().currentUser;
-                                await context.read<ExpenseProvider>().addExpense(
-                                  expense: expense,
-                                  payers: payers.isEmpty ? [ExpensePayer(expenseId: 0, userId: currentUser?.id ?? 0, amountPaid: template.amount)] : payers,
-                                  splits: splits.isEmpty ? [ExpenseSplit(expenseId: 0, userId: currentUser?.id ?? 0, amountOwed: template.amount)] : splits,
+                                final List<dynamic> parsedPayers = jsonDecode(
+                                  template.payersJson,
                                 );
+                                final List<dynamic> parsedSplits = jsonDecode(
+                                  template.splitsJson,
+                                );
+                                final payers = parsedPayers
+                                    .map(
+                                      (e) => ExpensePayer(
+                                        expenseId: 0,
+                                        userId: e['userId'],
+                                        amountPaid: (e['amountPaid'] as num)
+                                            .toDouble(),
+                                      ),
+                                    )
+                                    .toList();
+                                final splits = parsedSplits
+                                    .map(
+                                      (e) => ExpenseSplit(
+                                        expenseId: 0,
+                                        userId: e['userId'],
+                                        amountOwed: (e['amountOwed'] as num)
+                                            .toDouble(),
+                                      ),
+                                    )
+                                    .toList();
+                                final currentUser = context
+                                    .read<UserProvider>()
+                                    .currentUser;
+                                await context
+                                    .read<ExpenseProvider>()
+                                    .addExpense(
+                                      expense: expense,
+                                      payers: payers.isEmpty
+                                          ? [
+                                              ExpensePayer(
+                                                expenseId: 0,
+                                                userId: currentUser?.id ?? 0,
+                                                amountPaid: template.amount,
+                                              ),
+                                            ]
+                                          : payers,
+                                      splits: splits.isEmpty
+                                          ? [
+                                              ExpenseSplit(
+                                                expenseId: 0,
+                                                userId: currentUser?.id ?? 0,
+                                                amountOwed: template.amount,
+                                              ),
+                                            ]
+                                          : splits,
+                                    );
                                 if (!context.mounted) return;
-                                await context.read<BalanceProvider>().recalculateBalances();
+                                await context
+                                    .read<BalanceProvider>()
+                                    .recalculateBalances();
                                 if (!context.mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('✓ "${template.title}" logged instantly')),
+                                  SnackBar(
+                                    content: Text(
+                                      '✓ "${template.title}" logged instantly',
+                                    ),
+                                  ),
                                 );
                               },
                             ),
@@ -300,7 +368,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const RecycleBinScreen()),
+                          builder: (_) => const RecycleBinScreen(),
+                        ),
                       );
                     },
                     child: const Text('Recycle Bin'),
