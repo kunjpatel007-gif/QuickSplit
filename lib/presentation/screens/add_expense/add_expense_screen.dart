@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:campus_quicksplit/data/models/models.dart';
@@ -32,6 +33,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final Map<int, TextEditingController> _ratioControllers = {};
 
   final NlpParser _nlpParser = NlpParser();
+  DateTime _selectedDate = DateTime.now();
+  Timer? _nlpDebouncer;
 
   @override
   void initState() {
@@ -55,67 +58,75 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   void _onNlpChanged() {
-    if (_nlpController.text.isEmpty) return;
-    final parsed = _nlpParser.parse(_nlpController.text);
-    setState(() {
-      if (parsed.amount != null) {
-        _amountController.text = parsed.amount!.toStringAsFixed(2);
-      }
-      if (parsed.title != null && parsed.title!.isNotEmpty) {
-        _titleController.text = parsed.title!;
-      }
-      if (parsed.category != null) {
-        _category = parsed.category!;
-      }
+    if (_nlpDebouncer?.isActive ?? false) _nlpDebouncer!.cancel();
+    _nlpDebouncer = Timer(const Duration(milliseconds: 500), () async {
+      if (_nlpController.text.isEmpty) return;
       
-      final users = context.read<UserProvider>().users;
-      final currentUser = context.read<UserProvider>().currentUser;
-      
-      if (parsed.payerName != null && parsed.payerName!.isNotEmpty) {
-        final matchedUser = users.where((u) => 
-          u.name.toLowerCase() == parsed.payerName!.toLowerCase()
-        ).firstOrNull;
-        if (matchedUser != null) {
-          _payerId = matchedUser.id;
+      final parsed = await _nlpParser.parse(_nlpController.text);
+      if (!mounted) return;
+
+      setState(() {
+        if (parsed.date != null) {
+          _selectedDate = parsed.date!;
         }
-      }
-      
-      if (parsed.isProRata && parsed.items.isNotEmpty) {
-        _splitMode = SplitMode.specific;
-        
-        // Reset all specifics
-        for (var c in _specificControllers.values) {
-          c.text = '';
+        if (parsed.amount != null) {
+          _amountController.text = parsed.amount!.toStringAsFixed(2);
+        }
+        if (parsed.title != null && parsed.title!.isNotEmpty) {
+          _titleController.text = parsed.title!;
+        }
+        if (parsed.category != null) {
+          _category = parsed.category!;
         }
         
-        double subtotal = parsed.items.fold(0, (sum, i) => sum + i.amount);
-        Map<int, double> userShares = {};
+        final users = context.read<UserProvider>().users;
+        final currentUser = context.read<UserProvider>().currentUser;
         
-        for (var item in parsed.items) {
-          User? matchedUser;
-          final p = item.person.toLowerCase();
-          if (p == 'i' || p == 'me' || p == 'my') {
-            matchedUser = currentUser;
-            _payerId ??= currentUser?.id; // If I ordered it, assume I paid unless specified
-          } else {
-            matchedUser = users.where((u) => u.name.toLowerCase() == p).firstOrNull;
+        if (parsed.payerName != null && parsed.payerName!.isNotEmpty) {
+          final matchedUser = users.where((u) => 
+            u.name.toLowerCase() == parsed.payerName!.toLowerCase()
+          ).firstOrNull;
+          if (matchedUser != null) {
+            _payerId = matchedUser.id;
+          }
+        }
+        
+        if (parsed.isProRata && parsed.items.isNotEmpty) {
+          _splitMode = SplitMode.specific;
+          
+          for (var c in _specificControllers.values) {
+            c.text = '';
           }
           
-          if (matchedUser != null && matchedUser.id != null) {
-            double taxShare = subtotal > 0 ? (item.amount / subtotal) * parsed.taxAmount : 0;
-            double share = item.amount + taxShare;
-            userShares[matchedUser.id!] = (userShares[matchedUser.id!] ?? 0) + share;
+          double subtotal = parsed.items.fold(0, (sum, i) => sum + i.amount);
+          Map<int, double> userShares = {};
+          
+          for (var item in parsed.items) {
+            User? matchedUser;
+            final p = item.person.toLowerCase();
+            if (p == 'i' || p == 'me' || p == 'my') {
+              matchedUser = currentUser;
+              _payerId ??= currentUser?.id; 
+            } else {
+              matchedUser = users.where((u) => u.name.toLowerCase() == p).firstOrNull;
+            }
             
-            if (!_selectedUserIds.contains(matchedUser.id!)) {
-              _selectedUserIds.add(matchedUser.id!);
+            if (matchedUser != null && matchedUser.id != null) {
+              double taxShare = subtotal > 0 ? (item.amount / subtotal) * parsed.taxAmount : 0;
+              double share = item.amount + taxShare;
+              userShares[matchedUser.id!] = (userShares[matchedUser.id!] ?? 0) + share;
+              
+              if (!_selectedUserIds.contains(matchedUser.id!)) {
+                _selectedUserIds.add(matchedUser.id!);
+              }
             }
           }
+          
+          userShares.forEach((uid, share) {
+            _specificControllers[uid]?.text = share.toStringAsFixed(2);
+          });
         }
-        
-        userShares.forEach((uid, share) {
-          _specificControllers[uid]?.text = share.toStringAsFixed(2);
-        });
-      }
+      });
     });
   }
 
@@ -130,6 +141,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     for (var c in _ratioControllers.values) {
       c.dispose();
     }
+    _nlpDebouncer?.cancel();
+    _nlpParser.dispose();
     super.dispose();
   }
 
@@ -188,7 +201,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       title: _titleController.text.trim(),
       totalAmount: amount,
       category: _category,
-      timestamp: DateTime.now(),
+      timestamp: _selectedDate,
       isRecurring: _isRecurring,
     );
 

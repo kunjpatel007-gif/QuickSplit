@@ -11,7 +11,10 @@ class ExpenseRepository {
     return await db.insert('Expenses', expense.toMap());
   }
 
-  Future<List<Expense>> getAllActiveExpenses({int limit = 20, int offset = 0}) async {
+  Future<List<Expense>> getAllActiveExpenses({
+    int limit = 20,
+    int offset = 0,
+  }) async {
     final db = await _dbHelper.database;
     final maps = await db.query(
       'Expenses',
@@ -23,13 +26,10 @@ class ExpenseRepository {
     );
     return maps.map((map) => Expense.fromMap(map)).toList();
   }
-  
+
   Future<List<Expense>> getAllExpensesHistorical() async {
     final db = await _dbHelper.database;
-    final maps = await db.query(
-      'Expenses',
-      orderBy: 'timestamp DESC',
-    );
+    final maps = await db.query('Expenses', orderBy: 'timestamp DESC');
     return maps.map((map) => Expense.fromMap(map)).toList();
   }
 
@@ -67,21 +67,23 @@ class ExpenseRepository {
 
   Future<int> softDeleteExpense(int id) async {
     final db = await _dbHelper.database;
-    return await db.rawUpdate('UPDATE Expenses SET is_deleted = 1 WHERE id = ?', [id]);
+    return await db.rawUpdate(
+      'UPDATE Expenses SET is_deleted = 1 WHERE id = ?',
+      [id],
+    );
   }
 
   Future<int> restoreExpense(int id) async {
     final db = await _dbHelper.database;
-    return await db.rawUpdate('UPDATE Expenses SET is_deleted = 0 WHERE id = ?', [id]);
+    return await db.rawUpdate(
+      'UPDATE Expenses SET is_deleted = 0 WHERE id = ?',
+      [id],
+    );
   }
 
   Future<int> permanentlyDeleteExpense(int id) async {
     final db = await _dbHelper.database;
-    return await db.delete(
-      'Expenses',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('Expenses', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<Expense?> getExpenseById(int id) async {
@@ -92,7 +94,7 @@ class ExpenseRepository {
     }
     return null;
   }
-  
+
   Future<bool> doesExpenseTitleExist(String title) async {
     final db = await _dbHelper.database;
     final maps = await db.query(

@@ -1,3 +1,5 @@
+import 'package:google_mlkit_entity_extraction/google_mlkit_entity_extraction.dart';
+
 /// Parses free-form "Magic Typer" text into a [ParsedExpense].
 ///
 /// Handles two flows:
@@ -19,6 +21,7 @@ class ParsedExpense {
   final String? category;
   final String? payerName;
   final List<String> participants;
+  final DateTime? date;
 
   // Pro-rata fields
   final bool isProRata;
@@ -31,6 +34,7 @@ class ParsedExpense {
     this.category,
     this.payerName,
     this.participants = const [],
+    this.date,
     this.isProRata = false,
     this.taxAmount = 0.0,
     this.items = const [],
@@ -159,22 +163,28 @@ class NlpParser {
 
   static final RegExp _trailingPunctuationRegExp = RegExp(r'[.,;:]+$');
 
+  final _entityExtractor = EntityExtractor(language: EntityExtractorLanguage.english);
+
   /// Parses free-form text typed into the "Magic Typer" field.
   ///
   /// This is called on every keystroke, so it must never throw and should
   /// degrade gracefully on incomplete or malformed input.
-  ParsedExpense parse(String input) {
+  Future<ParsedExpense> parse(String input) async {
     final trimmed = input.trim();
     if (trimmed.isEmpty) return const ParsedExpense();
 
     try {
       final proRata = _tryParseProRata(trimmed);
       if (proRata != null) return proRata;
-      return _parseStandard(trimmed);
+      return await _parseStandard(trimmed);
     } catch (_) {
       // Never let a partially-typed sentence crash the UI.
       return const ParsedExpense();
     }
+  }
+
+  void dispose() {
+    _entityExtractor.close();
   }
 
   double? _parseAmount(String? raw) {
@@ -240,15 +250,37 @@ class NlpParser {
     return cleaned;
   }
 
-  ParsedExpense _parseStandard(String input) {
+  Future<ParsedExpense> _parseStandard(String input) async {
     double? amount;
-    final currencyMatch = _currencyAmountRegExp.firstMatch(input);
-    if (currencyMatch != null) {
-      amount = _parseAmount(currencyMatch.group(1) ?? currencyMatch.group(2));
-    } else {
-      final bareMatch = _bareAmountRegExp.firstMatch(input);
-      if (bareMatch != null) {
-        amount = _parseAmount(bareMatch.group(1));
+    DateTime? extractedDate;
+    List<String> rawPersons = [];
+
+    try {
+      final annotations = await _entityExtractor.annotateText(input);
+      for (final annotation in annotations) {
+        for (final entity in annotation.entities) {
+          if (entity.type == EntityType.money) {
+            final moneyEntity = entity as MoneyEntity;
+            amount ??= double.tryParse(moneyEntity.unnormalizedCurrency.replaceAll(',', ''));
+          } else if (entity.type == EntityType.dateTime) {
+            final dtEntity = entity as DateTimeEntity;
+            extractedDate ??= DateTime.fromMillisecondsSinceEpoch(dtEntity.timestamp);
+          }
+        }
+      }
+    } catch (_) {
+      // Ignore ML Kit errors and fallback
+    }
+
+    if (amount == null) {
+      final currencyMatch = _currencyAmountRegExp.firstMatch(input);
+      if (currencyMatch != null) {
+        amount = _parseAmount(currencyMatch.group(1) ?? currencyMatch.group(2));
+      } else {
+        final bareMatch = _bareAmountRegExp.firstMatch(input);
+        if (bareMatch != null) {
+          amount = _parseAmount(bareMatch.group(1));
+        }
       }
     }
 
@@ -263,7 +295,6 @@ class NlpParser {
       }
     }
     if (title == null) {
-      // Fallback: strip amounts, "with ..." clause and "paid", use the rest.
       var stripped = input.replaceAll(_numberLikeRegExp, '');
       stripped = stripped.replaceAll(_trailingWithClauseRegExp, '');
       stripped = stripped.replaceAll(_paidWordRegExp, '');
@@ -299,10 +330,16 @@ class NlpParser {
       for (final m in _capitalizedNameRegExp.allMatches(afterWith)) {
         final name = m.group(0)!;
         if (!_nameStopWords.contains(name.toLowerCase()) &&
-            !participants.contains(name)) {
+            !participants.contains(name) && name != payerName) {
           participants.add(name);
         }
       }
+    }
+    
+    for (final person in rawPersons) {
+       if (person != payerName && !participants.contains(person)) {
+           participants.add(person);
+       }
     }
 
     return ParsedExpense(
@@ -311,6 +348,7 @@ class NlpParser {
       category: category,
       payerName: payerName,
       participants: participants,
+      date: extractedDate,
     );
   }
 
