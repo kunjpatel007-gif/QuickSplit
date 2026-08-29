@@ -34,16 +34,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
   }
 
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      final expProv = context.read<ExpenseProvider>();
+      if (expProv.hasMore) {
+        expProv.loadMoreExpenses();
+      }
+    }
+  }
+
   Future<void> _loadData() async {
-    await context.read<ExpenseProvider>().loadExpenses();
-    await context.read<UserProvider>().loadUsers();
-    await context.read<BalanceProvider>().recalculateBalances();
-    await context.read<TemplateProvider>().loadTemplates();
+    final expProv = context.read<ExpenseProvider>();
+    final userProv = context.read<UserProvider>();
+    final balProv = context.read<BalanceProvider>();
+    final tmpProv = context.read<TemplateProvider>();
+
+    await expProv.loadExpenses();
+    await userProv.loadUsers();
+    await balProv.recalculateBalances();
+    await tmpProv.loadTemplates();
   }
 
   @override

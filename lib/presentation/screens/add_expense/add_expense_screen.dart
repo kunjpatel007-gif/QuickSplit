@@ -42,8 +42,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   void initState() {
     super.initState();
-    _splitMode = SplitMode.uniform;
-    _category = AppConstants.categories.first;
     _nlpController.addListener(_onNlpChanged);
 
     Future.microtask(() {

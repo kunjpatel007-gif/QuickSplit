@@ -23,19 +23,7 @@ class InputValidators {
     return null;
   }
 
-  static String? validateGroupSize(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Size cannot be empty';
-    }
-    final size = int.tryParse(value);
-    if (size == null) {
-      return 'Invalid integer format';
-    }
-    if (size < 2) {
-      return 'Group size must be at least 2';
-    }
-    return null;
-  }
+
 
   static String? validateName(String? value) {
     if (value == null || value.trim().isEmpty) {

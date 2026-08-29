@@ -16,11 +16,7 @@ class BalanceService {
     return balances;
   }
 
-  double getUserBalance(
-      int userId, List<ExpensePayer> allPayers, List<ExpenseSplit> allSplits) {
-    final Map<int, double> balances = calculateNetBalances(allPayers, allSplits);
-    return balances[userId] ?? 0.0;
-  }
+
 
   double getTotalGroupSpending(List<Expense> expenses) {
     double total = 0.0;

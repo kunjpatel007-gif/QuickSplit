@@ -54,6 +54,7 @@ class SettingsScreen extends StatelessWidget {
                   ],
                 ),
               );
+              controller.dispose();
               if (newName != null && newName.isNotEmpty && currentUser != null) {
                 final updated = currentUser.copyWith(name: newName);
                 userProvider.updateUser(updated);
@@ -88,8 +89,9 @@ class SettingsScreen extends StatelessWidget {
                   ],
                 ),
               );
+              controller.dispose();
               if (newUpi != null && currentUser != null) {
-                final updated = currentUser.copyWith(upiId: newUpi);
+                final updated = currentUser.copyWith(upiId: newUpi.isEmpty ? null : newUpi);
                 userProvider.updateUser(updated);
               }
             },
@@ -123,8 +125,9 @@ class SettingsScreen extends StatelessWidget {
                   ],
                 ),
               );
+              controller.dispose();
               if (newPhone != null && currentUser != null) {
-                final updated = currentUser.copyWith(phoneNumber: newPhone);
+                final updated = currentUser.copyWith(phoneNumber: newPhone.isEmpty ? null : newPhone);
                 userProvider.updateUser(updated);
               }
             },

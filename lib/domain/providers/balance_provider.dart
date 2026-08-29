@@ -6,6 +6,7 @@ import 'package:campus_quicksplit/domain/services/widget_service.dart';
 class BalanceProvider extends ChangeNotifier {
   final ExpenseRepository _expenseRepository;
   final BalanceService _balanceService;
+  final UserRepository _userRepository;
 
   Map<int, double> _balances = {};
   double _totalSpending = 0;
@@ -13,8 +14,10 @@ class BalanceProvider extends ChangeNotifier {
   BalanceProvider({
     required ExpenseRepository expenseRepo,
     required BalanceService balanceService,
+    required UserRepository userRepo,
   })  : _expenseRepository = expenseRepo,
-        _balanceService = balanceService;
+        _balanceService = balanceService,
+        _userRepository = userRepo;
 
   Map<int, double> get balances => Map.unmodifiable(_balances);
   double get totalSpending => _totalSpending;
@@ -28,8 +31,9 @@ class BalanceProvider extends ChangeNotifier {
     _totalSpending = _balanceService.getTotalGroupSpending(activeExpenses);
 
     // Update the Android Home Screen Widget with the current user's balance
-    // (Assuming current user is ID 1 for now, or just the net sum)
-    double myBalance = _balances[1] ?? 0.0;
+    final currentUser = await _userRepository.getCurrentUser();
+    final currentUserId = currentUser?.id ?? 1;
+    double myBalance = _balances[currentUserId] ?? 0.0;
     WidgetService.updateBalanceWidget(myBalance);
 
     notifyListeners();

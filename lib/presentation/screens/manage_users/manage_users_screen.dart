@@ -150,7 +150,11 @@ class _UserDialogState extends State<_UserDialog> {
       final provider = context.read<UserProvider>();
       
       if (widget.user == null) {
-        provider.addUser(name);
+        provider.addUser(
+          name,
+          upiId: upiId.isEmpty ? null : upiId,
+          phoneNumber: phone.isEmpty ? null : phone,
+        );
       } else {
         provider.updateUser(widget.user!.copyWith(
           name: name,

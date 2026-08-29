@@ -86,6 +86,16 @@ class ExpenseRepository {
     return await db.delete('Expenses', where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<int> deleteExpensePayers(int expenseId) async {
+    final db = await _dbHelper.database;
+    return await db.delete('ExpensePayers', where: 'expense_id = ?', whereArgs: [expenseId]);
+  }
+
+  Future<int> deleteExpenseSplits(int expenseId) async {
+    final db = await _dbHelper.database;
+    return await db.delete('ExpenseSplits', where: 'expense_id = ?', whereArgs: [expenseId]);
+  }
+
   Future<Expense?> getExpenseById(int id) async {
     final db = await _dbHelper.database;
     final maps = await db.query('Expenses', where: 'id = ?', whereArgs: [id]);

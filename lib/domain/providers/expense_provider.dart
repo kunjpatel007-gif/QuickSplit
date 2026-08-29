@@ -134,14 +134,9 @@ class ExpenseProvider extends ChangeNotifier {
   }) async {
     await _expenseRepository.updateExpense(expense);
 
-    final oldPayers = await _expenseRepository.getPayersForExpense(expense.id!);
-    final oldSplits = await _expenseRepository.getSplitsForExpense(expense.id!);
-    for (var p in oldPayers) {
-      await _expenseRepository.permanentlyDeleteExpense(p.id!);
-    }
-    for (var s in oldSplits) {
-      await _expenseRepository.permanentlyDeleteExpense(s.id!);
-    }
+    // Clear old payers and splits correctly using the new repository methods
+    await _expenseRepository.deleteExpensePayers(expense.id!);
+    await _expenseRepository.deleteExpenseSplits(expense.id!);
 
     for (var payer in payers) {
       final newPayer = ExpensePayer(
@@ -172,7 +167,7 @@ class ExpenseProvider extends ChangeNotifier {
     await loadExpenses();
   }
 
-  Future<void> permanentlyDeleteExpense(int id) async {
+  Future<void> permanentlyDeleteExpense(int id, {bool reload = true}) async {
     final expense = await _expenseRepository.getExpenseById(id);
     await _expenseRepository.permanentlyDeleteExpense(id);
     
@@ -187,6 +182,8 @@ class ExpenseProvider extends ChangeNotifier {
       await _auditRepository.insertAuditLog(auditEntry);
     }
     
-    await loadExpenses();
+    if (reload) {
+      await loadExpenses();
+    }
   }
 }

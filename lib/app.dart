@@ -107,7 +107,7 @@ class _CampusQuickSplitAppState extends State<CampusQuickSplitApp> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Incoming Shared Expense'),
-        content: Text('Import "$title" for \$$amount into QuickSplit?'),
+        content: Text('Import "$title" for ₹$amount into QuickSplit?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),

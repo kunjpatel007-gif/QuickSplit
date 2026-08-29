@@ -66,8 +66,9 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                 );
                 if (confirm == true && mounted) {
                   for (var expense in _deletedExpenses) {
-                    await context.read<ExpenseProvider>().permanentlyDeleteExpense(expense.id!);
+                    await context.read<ExpenseProvider>().permanentlyDeleteExpense(expense.id!, reload: false);
                   }
+                  await context.read<ExpenseProvider>().loadExpenses();
                   await _loadDeleted();
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(

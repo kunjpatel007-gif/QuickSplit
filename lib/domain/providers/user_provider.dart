@@ -18,10 +18,12 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addUser(String name, {String? syncId}) async {
+  Future<void> addUser(String name, {String? syncId, String? upiId, String? phoneNumber}) async {
     final user = User(
       syncId: syncId ?? '',
       name: name,
+      upiId: upiId,
+      phoneNumber: phoneNumber,
       createdAt: DateTime.now(),
     );
     await _userRepository.insertUser(user);
