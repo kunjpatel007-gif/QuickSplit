@@ -33,6 +33,9 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     super.initState();
     if (!Platform.isWindows) {
       _textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scanReceipt();
+      });
     }
   }
 
