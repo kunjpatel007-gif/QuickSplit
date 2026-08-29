@@ -245,42 +245,41 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     if (_receiptImage != null) {
       return Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
+        child: Row(
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.file(
                 _receiptImage!,
-                height: 200,
-                width: double.infinity,
+                height: 60,
+                width: 60,
                 fit: BoxFit.cover,
                 alignment: Alignment.topCenter,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Retake'),
-                  onPressed: () => _pickImage(ImageSource.camera),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  label: const Text('Clear', style: TextStyle(color: Colors.red)),
-                  onPressed: () {
-                    setState(() {
-                      _receiptImage = null;
-                      _extractedItems.clear();
-                      _taxLines.clear();
-                      _assignedItems.clear();
-                    });
-                  },
-                ),
-              ],
-            )
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retake'),
+                onPressed: () => _pickImage(ImageSource.camera),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                label: const Text('Clear', style: TextStyle(color: Colors.red)),
+                onPressed: () {
+                  setState(() {
+                    _receiptImage = null;
+                    _extractedItems.clear();
+                    _taxLines.clear();
+                    _assignedItems.clear();
+                  });
+                },
+              ),
+            ),
           ],
         ),
       );
@@ -462,6 +461,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
                 builder: (context, candidateData, rejectedData) {
                   final assignedCount = _assignedItems[user.id]?.length ?? 0;
                   return Container(
+                    width: 105,
                     margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                     padding: const EdgeInsets.all(AppSpacing.sm),
                     decoration: BoxDecoration(
@@ -477,7 +477,11 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
                       children: [
                         CircleAvatar(child: Text(user.name[0])),
                         const SizedBox(height: AppSpacing.sm),
-                        Text(user.name),
+                        Text(
+                          user.name,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                         Text('$assignedCount items', style: tt.bodySmall),
                       ],
                     ),
