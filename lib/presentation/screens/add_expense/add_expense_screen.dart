@@ -73,7 +73,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           _selectedDate = parsed.date!;
         }
         if (parsed.amount != null) {
-          _amountController.text = parsed.amount!.toStringAsFixed(2);
+          double tax = parsed.taxAmount;
+          double total = parsed.amount!;
+          double subtotal = total - tax;
+          _amountController.text = subtotal > 0 ? subtotal.toStringAsFixed(2) : total.toStringAsFixed(2);
+          _taxController.text = tax > 0 ? tax.toStringAsFixed(2) : '';
         }
         if (parsed.title != null && parsed.title!.isNotEmpty) {
           _titleController.text = parsed.title!;
@@ -113,7 +117,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         
         if (parsed.isProRata && parsed.items.isNotEmpty) {
           _splitMode = SplitMode.specific;
-          _taxController.text = parsed.taxAmount > 0 ? parsed.taxAmount.toStringAsFixed(2) : '';
           
           for (var c in _specificControllers.values) {
             c.text = '';
@@ -166,14 +169,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   double _getRemainingSpecific() {
-    final total = double.tryParse(_amountController.text) ?? 0;
-    final tax = double.tryParse(_taxController.text) ?? 0;
+    final subtotal = double.tryParse(_amountController.text) ?? 0;
     double assigned = 0;
     for (var uid in _selectedUserIds) {
       assigned +=
           double.tryParse(_specificControllers[uid]?.text ?? '0') ?? 0;
     }
-    return total - tax - assigned;
+    return subtotal - assigned;
   }
 
   double _getRatioSum() {
@@ -214,7 +216,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       return;
     }
 
-    final amount = double.parse(_amountController.text);
+    final subtotal = double.tryParse(_amountController.text) ?? 0;
+    final tax = double.tryParse(_taxController.text) ?? 0;
+    final amount = subtotal + tax;
     final splitEngine = SplitEngine();
 
     final expense = Expense(
@@ -292,26 +296,116 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final users = userProvider.users as List<User>;
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final users = context.watch<UserProvider>().users;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Add Expense')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Add Expense'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(icon: Icon(Icons.edit), text: 'Manual Entry'),
+              Tab(icon: Icon(Icons.auto_awesome), text: 'Auto-Parse'),
+            ],
+          ),
+        ),
+        body: TabBarView(
           children: [
-            TextFormField(
-              controller: _nlpController,
-              decoration: const InputDecoration(
-                labelText: 'Auto-Parse',
-                prefixIcon: Icon(Icons.auto_fix_high),
-                hintText: 'e.g., Paid 500 for pizza with Rahul',
+            _buildManualTab(users, cs, tt),
+            _buildNlpTab(cs, tt),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNlpTab(ColorScheme cs, TextTheme tt) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _nlpController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Auto-Parse (Magic Typer)',
+              hintText: 'e.g., I ordered pizza for 500 and mitul ordered pasta for 600 taxes 125',
+              prefixIcon: Icon(Icons.auto_awesome),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          if (_titleController.text.isNotEmpty || _amountController.text.isNotEmpty) ...[
+            Text('Parsed Preview', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: AppSpacing.md),
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Title:'),
+                        Text(_titleController.text, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Subtotal:'),
+                        Text('₹' + (double.tryParse(_amountController.text) ?? 0).toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Tax / Overhead:'),
+                        Text('₹' + (double.tryParse(_taxController.text) ?? 0).toStringAsFixed(2), style: TextStyle(fontWeight: FontWeight.bold, color: cs.error)),
+                      ],
+                    ),
+                    const Divider(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Final Total:'),
+                        Text('₹' + ((double.tryParse(_amountController.text) ?? 0) + (double.tryParse(_taxController.text) ?? 0)).toStringAsFixed(2), style: tt.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.xl),
+            FilledButton.icon(
+              onPressed: _canSubmit() ? _submit : null,
+              icon: const Icon(Icons.check),
+              label: const Text('Submit Expense'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(50),
+              ),
+            ),
+          ]
+        ],
+      ),
+    );
+  }
+
+  Widget _buildManualTab(List<User> users, ColorScheme cs, TextTheme tt) {
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        children: [
             TextFormField(
               controller: _titleController,
               decoration: const InputDecoration(
@@ -326,27 +420,25 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(
-                labelText: 'Amount (₹)',
+                labelText: 'Subtotal / Amount (₹)',
                 prefixIcon: Icon(Icons.currency_rupee),
               ),
               validator: InputValidators.validateAmount,
               onChanged: (_) => setState(() {}),
             ),
-            if (_splitMode == SplitMode.specific) ...[
-              const SizedBox(height: AppSpacing.md),
-              TextFormField(
-                controller: _taxController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: 'Tax / Overhead (Optional)',
-                  prefixIcon: const Icon(Icons.receipt_long),
-                  helperText: 'Will be distributed proportionally',
-                  helperStyle: TextStyle(color: Theme.of(context).colorScheme.primary),
-                ),
-                onChanged: (_) => setState(() {}),
+            const SizedBox(height: AppSpacing.md),
+            TextFormField(
+              controller: _taxController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Tax / Overhead (Optional)',
+                prefixIcon: const Icon(Icons.receipt_long),
+                helperText: 'Will be added proportionally',
+                helperStyle: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
-            ],
+              onChanged: (_) => setState(() {}),
+            ),
             const SizedBox(height: AppSpacing.lg),
             DropdownButtonFormField<String>(
               value: _category,

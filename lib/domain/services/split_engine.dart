@@ -128,12 +128,12 @@ class SplitEngine {
     return splits;
   }
 
-  bool validateSpecificSplit(double totalAmount, Map<int, double> userAmounts, {double totalOverhead = 0.0}) {
+  bool validateSpecificSplit(double subtotal, Map<int, double> userAmounts) {
     double sum = 0.0;
     for (final amount in userAmounts.values) {
       sum += amount;
     }
-    return (sum + totalOverhead - totalAmount).abs() < 0.01;
+    return (sum - subtotal).abs() < 0.01;
   }
 
   bool validateRatioSplit(Map<int, double> userRatios) {
