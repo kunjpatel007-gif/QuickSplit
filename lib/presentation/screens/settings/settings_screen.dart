@@ -2,171 +2,121 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:campus_quicksplit/data/repositories/repositories.dart';
+import 'package:campus_quicksplit/data/repositories/expense_repository.dart';
 import 'package:campus_quicksplit/domain/providers/providers.dart';
 import 'package:campus_quicksplit/presentation/screens/manage_users/manage_users_screen.dart';
 import 'package:campus_quicksplit/presentation/screens/presets/presets_screen.dart';
-import 'package:campus_quicksplit/presentation/widgets/widgets.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
-    final themeProvider = context.watch<ThemeProvider>();
     final currentUser = userProvider.currentUser;
 
     return Scaffold(
+      backgroundColor: const Color(0xFF131314),
       appBar: AppBar(
-        title: const Text('Settings'),
+        backgroundColor: const Color(0xFF131314),
+        title: Text('SYSTEM_CONFIG', style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold, color: const Color(0xFFe5e2e3))),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFe5e2e3)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: const Color(0xFF514532), height: 2),
+        ),
       ),
       body: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          const SectionHeader(title: 'Profile'),
-          ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.person)),
-            title: Text(currentUser?.name ?? 'No User'),
-            subtitle: const Text('Tap to edit your display name'),
-            trailing: const Icon(Icons.edit, size: 18),
+          Row(
+            children: [
+              const Icon(Icons.person, color: Color(0xFF9e8f78), size: 16),
+              const SizedBox(width: 8),
+              Text('USER PROFILE', style: GoogleFonts.jetBrainsMono(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF9e8f78), letterSpacing: 1.5)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          _buildSettingsItem(
+            context,
+            icon: Icons.badge,
+            title: currentUser?.name ?? 'NO_USER',
+            subtitle: 'DISPLAY_NAME',
             onTap: () async {
               final controller = TextEditingController(text: currentUser?.name ?? '');
-              final newName = await showDialog<String>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Edit Display Name'),
-                  content: TextField(
-                    controller: controller,
-                    autofocus: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Your Name',
-                      hintText: 'e.g. Mitul, Rahul...',
-                    ),
-                  ),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-                      child: const Text('Save'),
-                    ),
-                  ],
-                ),
-              );
-              controller.dispose();
+              final newName = await _showEditDialog(context, 'EDIT_NAME', controller);
               if (newName != null && newName.isNotEmpty && currentUser != null) {
-                final updated = currentUser.copyWith(name: newName);
-                userProvider.updateUser(updated);
+                userProvider.updateUser(currentUser.copyWith(name: newName));
               }
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.payment),
-            title: const Text('UPI ID'),
-            subtitle: Text(currentUser?.upiId?.isNotEmpty == true ? currentUser!.upiId! : 'Not set'),
-            trailing: const Icon(Icons.edit, size: 18),
+          _buildSettingsItem(
+            context,
+            icon: Icons.payment,
+            title: currentUser?.upiId?.isNotEmpty == true ? currentUser!.upiId! : 'NOT_SET',
+            subtitle: 'UPI_ID',
             onTap: () async {
               final controller = TextEditingController(text: currentUser?.upiId ?? '');
-              final newUpi = await showDialog<String>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Edit UPI ID'),
-                  content: TextField(
-                    controller: controller,
-                    autofocus: true,
-                    decoration: const InputDecoration(
-                      labelText: 'UPI ID',
-                      hintText: 'e.g. yourname@upi',
-                    ),
-                  ),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-                      child: const Text('Save'),
-                    ),
-                  ],
-                ),
-              );
-              controller.dispose();
+              final newUpi = await _showEditDialog(context, 'EDIT_UPI', controller);
               if (newUpi != null && currentUser != null) {
-                final updated = currentUser.copyWith(upiId: newUpi.isEmpty ? null : newUpi);
-                userProvider.updateUser(updated);
+                userProvider.updateUser(currentUser.copyWith(upiId: newUpi.isEmpty ? null : newUpi));
               }
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.phone),
-            title: const Text('Phone Number'),
-            subtitle: Text(currentUser?.phoneNumber?.isNotEmpty == true ? currentUser!.phoneNumber! : 'Not set'),
-            trailing: const Icon(Icons.edit, size: 18),
+          _buildSettingsItem(
+            context,
+            icon: Icons.phone,
+            title: currentUser?.phoneNumber?.isNotEmpty == true ? currentUser!.phoneNumber! : 'NOT_SET',
+            subtitle: 'PHONE_NUMBER',
             onTap: () async {
               final controller = TextEditingController(text: currentUser?.phoneNumber ?? '');
-              final newPhone = await showDialog<String>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Edit Phone Number'),
-                  content: TextField(
-                    controller: controller,
-                    autofocus: true,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Phone Number',
-                      hintText: '10-digit number',
-                    ),
-                  ),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-                      child: const Text('Save'),
-                    ),
-                  ],
-                ),
-              );
-              controller.dispose();
+              final newPhone = await _showEditDialog(context, 'EDIT_PHONE', controller);
               if (newPhone != null && currentUser != null) {
-                final updated = currentUser.copyWith(phoneNumber: newPhone.isEmpty ? null : newPhone);
-                userProvider.updateUser(updated);
+                userProvider.updateUser(currentUser.copyWith(phoneNumber: newPhone.isEmpty ? null : newPhone));
               }
-            },
-          ),
-            
-          const Divider(),
-          const SectionHeader(title: 'App Settings'),
-          SwitchListTile(
-            secondary: const Icon(Icons.dark_mode),
-            title: const Text('Dark Theme'),
-            value: themeProvider.isDarkMode,
-            onChanged: (value) => themeProvider.toggleTheme(),
-          ),
-          ListTile(
-            leading: const Icon(Icons.group_add),
-            title: const Text('Manage Users'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ManageUsersScreen()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.auto_awesome),
-            title: const Text('Routine Presets'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const PresetsScreen()),
-              );
             },
           ),
           
-          const Divider(),
-          const SectionHeader(title: 'Data & Privacy'),
-          ListTile(
-            leading: const Icon(Icons.download),
-            title: const Text('Export Data'),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              const Icon(Icons.settings, color: Color(0xFF9e8f78), size: 16),
+              const SizedBox(width: 8),
+              Text('SYSTEM PREFERENCES', style: GoogleFonts.jetBrainsMono(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF9e8f78), letterSpacing: 1.5)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          _buildSettingsItem(
+            context,
+            icon: Icons.group,
+            title: 'MANAGE_USERS',
+            subtitle: 'ADD_OR_EDIT_NETWORK_NODES',
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ManageUsersScreen()));
+            },
+          ),
+          _buildSettingsItem(
+            context,
+            icon: Icons.auto_awesome,
+            title: 'ROUTINE_PRESETS',
+            subtitle: 'CONFIGURE_AUTOMATED_SPLITS',
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const PresetsScreen()));
+            },
+          ),
+          _buildSettingsItem(
+            context,
+            icon: Icons.download,
+            title: 'EXPORT_LEDGER',
+            subtitle: 'DOWNLOAD_JSON_ARCHIVE',
             onTap: () async {
               try {
                 final expenseRepo = Provider.of<ExpenseRepository>(context, listen: false);
@@ -195,13 +145,79 @@ class SettingsScreen extends StatelessWidget {
               }
             },
           ),
-          
-          const Divider(),
-          const SectionHeader(title: 'About'),
-          const ListTile(
-            leading: Icon(Icons.info),
-            title: Text('Campus QuickSplit'),
-            subtitle: Text('Version 1.0.0'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsItem(BuildContext context, {required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF201f20),
+          border: Border.all(color: const Color(0xFF514532)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF131314),
+                border: Border.all(color: const Color(0xFF514532)),
+              ),
+              child: Icon(icon, color: const Color(0xFFe5e2e3), size: 20),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: GoogleFonts.jetBrainsMono(color: const Color(0xFFe5e2e3), fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: GoogleFonts.jetBrainsMono(color: const Color(0xFF9e8f78), fontSize: 10)),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Color(0xFF9e8f78), size: 14),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<String?> _showEditDialog(BuildContext context, String title, TextEditingController controller) {
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF201f20),
+        shape: const RoundedRectangleBorder(side: BorderSide(color: Color(0xFF514532), width: 2)),
+        title: Text(title, style: GoogleFonts.jetBrainsMono(color: const Color(0xFFe5e2e3), fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: GoogleFonts.jetBrainsMono(color: const Color(0xFFe5e2e3)),
+          decoration: InputDecoration(
+            enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF514532))),
+            focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFFffdca1))),
+            hintStyle: GoogleFonts.jetBrainsMono(color: const Color(0xFF9e8f78)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('CANCEL', style: GoogleFonts.jetBrainsMono(color: const Color(0xFFffb4ab))),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFffb800),
+              foregroundColor: const Color(0xFF131314),
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            ),
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: Text('SAVE', style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold)),
           ),
         ],
       ),

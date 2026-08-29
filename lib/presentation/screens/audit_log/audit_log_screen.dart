@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:campus_quicksplit/data/models/models.dart';
 import 'package:campus_quicksplit/data/repositories/repositories.dart';
 import 'package:campus_quicksplit/domain/services/services.dart';
 import 'package:campus_quicksplit/core/utils/date_formatter.dart';
-import 'package:campus_quicksplit/core/theme/app_spacing.dart';
-import 'package:campus_quicksplit/presentation/widgets/staggered_list_item.dart';
-import 'package:campus_quicksplit/presentation/widgets/widgets.dart';
 
 class AuditLogScreen extends StatefulWidget {
   const AuditLogScreen({super.key});
@@ -36,34 +34,28 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
     }
   }
 
-  Color _getActionColor(BuildContext context, String actionType) {
-    final cs = Theme.of(context).colorScheme;
+  Color _getActionColor(String actionType) {
     switch (actionType) {
       case 'CREATED':
         return const Color(0xFF16A34A);
       case 'UPDATED':
-        return cs.tertiary;
+        return const Color(0xFFb8c3ff);
       case 'MOVED_TO_BIN':
-        return cs.error;
+        return const Color(0xFFffb4ab);
       case 'RESTORED':
-        return cs.primary;
+        return const Color(0xFFffb800);
       default:
-        return cs.onSurfaceVariant;
+        return const Color(0xFFe5e2e3);
     }
   }
 
   IconData _getActionIcon(String actionType) {
     switch (actionType) {
-      case 'CREATED':
-        return Icons.add_circle;
-      case 'UPDATED':
-        return Icons.edit;
-      case 'MOVED_TO_BIN':
-        return Icons.delete;
-      case 'RESTORED':
-        return Icons.restore;
-      default:
-        return Icons.history;
+      case 'CREATED': return Icons.add;
+      case 'UPDATED': return Icons.edit;
+      case 'MOVED_TO_BIN': return Icons.delete;
+      case 'RESTORED': return Icons.restore;
+      default: return Icons.history;
     }
   }
 
@@ -76,19 +68,30 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        icon: Icon(
-          isValid ? Icons.verified : Icons.warning,
-          color: isValid ? const Color(0xFF16A34A) : Theme.of(context).colorScheme.error,
-          size: 48,
+        backgroundColor: const Color(0xFF201f20),
+        shape: const RoundedRectangleBorder(side: BorderSide(color: Color(0xFF514532), width: 2)),
+        title: Row(
+          children: [
+            Icon(isValid ? Icons.verified : Icons.warning, color: isValid ? const Color(0xFF16A34A) : const Color(0xFFffb4ab), size: 28),
+            const SizedBox(width: 8),
+            Expanded(child: Text(isValid ? 'CHAIN VERIFIED' : 'CHAIN BROKEN', style: GoogleFonts.jetBrainsMono(color: const Color(0xFFe5e2e3), fontWeight: FontWeight.bold))),
+          ],
         ),
-        title: Text(isValid ? 'Chain Verified ✓' : 'Chain Broken ✗'),
-        content: Text(isValid
-            ? 'All audit records are intact. No tampering detected.'
-            : 'WARNING: Hash mismatch detected! Local data may have been tampered with outside the app.'),
+        content: Text(
+          isValid
+              ? 'ALL AUDIT RECORDS ARE INTACT. NO TAMPERING DETECTED.'
+              : 'WARNING: HASH MISMATCH DETECTED! LOCAL DATA MAY HAVE BEEN TAMPERED WITH OUTSIDE THE APP.',
+          style: GoogleFonts.jetBrainsMono(color: const Color(0xFF9e8f78)),
+        ),
         actions: [
-          TextButton(
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFffb800),
+              foregroundColor: const Color(0xFF131314),
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+            ),
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text('ACKNOWLEDGE', style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -97,63 +100,72 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
     return Scaffold(
+      backgroundColor: const Color(0xFF131314),
       appBar: AppBar(
-        title: const Text('Audit Trail'),
+        backgroundColor: const Color(0xFF131314),
+        title: Text('AUDIT_TRAIL', style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold, color: const Color(0xFFe5e2e3))),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: const Color(0xFF514532), height: 2),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.verified_user),
-            tooltip: 'Verify Blockchain Integrity',
+            icon: const Icon(Icons.verified_user, color: Color(0xFFffb800)),
+            tooltip: 'VERIFY LEDGER INTEGRITY',
             onPressed: _verifyChain,
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFffb800)))
           : RefreshIndicator(
               onRefresh: _loadLogs,
               child: _logs.isEmpty
-                  ? SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: Container(
-                        height: MediaQuery.of(context).size.height * 0.7,
-                        alignment: Alignment.center,
-                        child: const EmptyState(
-                          icon: Icons.history,
-                          message: 'No audit records yet',
-                        ),
-                      ),
-                    )
+                  ? Center(child: Text('NO AUDIT RECORDS FOUND', style: GoogleFonts.jetBrainsMono(color: const Color(0xFF514532))))
                   : ListView.builder(
+                      padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 80),
                       itemCount: _logs.length,
                       itemBuilder: (context, index) {
                         final log = _logs[index];
-                        final color = _getActionColor(context, log.actionType);
-                        return StaggeredListItem(
-                          index: index,
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: color.withValues(alpha: 0.15),
-                              child: Icon(_getActionIcon(log.actionType),
-                                  color: color, size: 20),
-                            ),
-                            title: Text(
-                              '${log.actionType} · Expense #${log.expenseId}',
-                              style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                            subtitle: Text(
-                              DateFormatter.formatRelative(log.timestamp),
-                            ),
-                            trailing: Text(
-                              log.currentHash.substring(0, 8),
-                              style: tt.bodySmall?.copyWith(
-                                fontFamily: 'monospace',
-                                color: cs.onSurface.withValues(alpha: 0.6),
+                        final color = _getActionColor(log.actionType);
+                        
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF201f20),
+                            border: Border.all(color: const Color(0xFF514532)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF131314),
+                                  border: Border.all(color: color),
+                                ),
+                                child: Icon(_getActionIcon(log.actionType), color: color, size: 20),
                               ),
-                            ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('${log.actionType} · TXN #${log.expenseId}', style: GoogleFonts.jetBrainsMono(color: const Color(0xFFe5e2e3), fontWeight: FontWeight.bold, fontSize: 14)),
+                                    const SizedBox(height: 4),
+                                    Text(DateFormatter.formatRelative(log.timestamp).toUpperCase(), style: GoogleFonts.jetBrainsMono(color: const Color(0xFF9e8f78), fontSize: 10)),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text('HASH', style: GoogleFonts.jetBrainsMono(color: const Color(0xFF514532), fontSize: 10)),
+                                  Text(log.currentHash.substring(0, 8), style: GoogleFonts.jetBrainsMono(color: const Color(0xFFb8c3ff), fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ],
                           ),
                         );
                       },

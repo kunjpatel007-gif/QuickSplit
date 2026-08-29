@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -57,7 +58,12 @@ class _PresetsScreenState extends State<PresetsScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Routine Presets'),
+        backgroundColor: const Color(0xFF131314),
+        title: Text('ROUTINE_PRESETS', style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold, color: const Color(0xFFe5e2e3))),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: const Color(0xFF514532), height: 2),
+        ),
       ),
       body: Consumer<TemplateProvider>(
         builder: (context, provider, child) {

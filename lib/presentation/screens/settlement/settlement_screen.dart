@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -22,9 +23,8 @@ class SettlementScreen extends StatefulWidget {
 
 class _SettlementScreenState extends State<SettlementScreen> {
   @override
+  @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
     final balanceProvider = context.watch<BalanceProvider>();
     final userProvider = context.watch<UserProvider>();
     final netBalances = balanceProvider.balances;
@@ -35,126 +35,94 @@ class _SettlementScreenState extends State<SettlementScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settlements')),
+      backgroundColor: const Color(0xFF131314),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF131314),
+        title: Text('SETTLEMENTS', style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold, color: const Color(0xFFe5e2e3))),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: const Color(0xFF514532), height: 2),
+        ),
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           await context.read<ExpenseProvider>().loadExpenses();
           await context.read<BalanceProvider>().recalculateBalances();
         },
         child: transactions.isEmpty
-            ? SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Container(
-                  height: MediaQuery.of(context).size.height * 0.7,
-                  alignment: Alignment.center,
-                  child: const EmptyState(
-                    icon: Icons.check_circle,
-                    message: 'No settlements needed!',
-                  ),
-                ),
-              )
+            ? Center(child: Text('NO SETTLEMENTS NEEDED', style: GoogleFonts.jetBrainsMono(color: const Color(0xFF514532))))
             : ListView.builder(
-                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 80),
                 itemCount: transactions.length,
                 itemBuilder: (context, index) {
                   final tx = transactions[index];
                   final fromUser = userProvider.getUserById(tx.fromUserId);
                   final toUser = userProvider.getUserById(tx.toUserId);
 
-                  if (fromUser == null || toUser == null) {
-                    return const SizedBox.shrink();
-                  }
+                  if (fromUser == null || toUser == null) return const SizedBox.shrink();
 
-                  return StaggeredListItem(
-                    index: index,
-                    child: Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                        vertical: AppSpacing.sm,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  final bool amIPaying = userProvider.currentUser?.id == fromUser.id;
+                  final bool amIReceiving = userProvider.currentUser?.id == toUser.id;
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF201f20),
+                      border: Border.all(color: const Color(0xFF514532)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    '${fromUser.name} owes ${toUser.name}',
-                                    style: tt.titleMedium,
-                                  ),
-                                ),
-                                Text(
-                                  CurrencyFormatter.format(tx.amount),
-                                  style: tt.titleLarge?.copyWith(
-                                    color: cs.error,
-                                  ),
-                                ),
-                              ],
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('${fromUser.name.toUpperCase()} OWES', style: GoogleFonts.jetBrainsMono(color: const Color(0xFF9e8f78), fontSize: 10)),
+                                  Text(toUser.name.toUpperCase(), style: GoogleFonts.jetBrainsMono(color: const Color(0xFFe5e2e3), fontWeight: FontWeight.bold, fontSize: 16)),
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: AppSpacing.lg),
-                            Wrap(
-                              spacing: AppSpacing.sm,
-                              runSpacing: AppSpacing.sm,
-                              children: [
-                                // UPI Button — only if you are the one paying!
-                                if ((Platform.isAndroid || Platform.isIOS) &&
-                                    userProvider.currentUser?.id == fromUser.id)
-                                  ElevatedButton.icon(
-                                    onPressed: () =>
-                                        _handleUpiPayment(toUser, tx.amount),
-                                    icon: const Icon(Icons.payment, size: 18),
-                                    label: Text(
-                                      toUser.upiId != null &&
-                                              toUser.upiId!.isNotEmpty
-                                          ? 'Pay via UPI'
-                                          : 'Add UPI & Pay',
-                                    ),
-                                  ),
-                                // Scan GPay QR — only if you are the one paying and they don't have UPI ID
-                                if ((Platform.isAndroid || Platform.isIOS) &&
-                                    userProvider.currentUser?.id ==
-                                        fromUser.id &&
-                                    (toUser.upiId == null ||
-                                        toUser.upiId!.isEmpty))
-                                  OutlinedButton.icon(
-                                    onPressed: () =>
-                                        _scanGPayQr(toUser, tx.amount),
-                                    icon: const Icon(
-                                      Icons.qr_code_scanner,
-                                      size: 18,
-                                    ),
-                                    label: const Text('Scan GPay QR'),
-                                  ),
-                                // Nudge via WhatsApp - only if you are the one receiving!
-                                if ((Platform.isAndroid || Platform.isIOS) &&
-                                    userProvider.currentUser?.id == toUser.id &&
-                                    fromUser.phoneNumber != null &&
-                                    fromUser.phoneNumber!.isNotEmpty)
-                                  OutlinedButton.icon(
-                                    onPressed: () => IntentUtils.launchWhatsApp(context, 
-                                      fromUser.phoneNumber!,
-                                      tx.amount,
-                                    ),
-                                    icon: const Icon(Icons.message, size: 18),
-                                    label: const Text('Nudge'),
-                                  ),
-                                // Mark Settled with proof
-                                TextButton.icon(
-                                  onPressed: () => _showSettlementProofDialog(
-                                    fromUser,
-                                    toUser,
-                                    tx.amount,
-                                  ),
-                                  icon: const Icon(Icons.check, size: 18),
-                                  label: const Text('Mark Settled'),
-                                ),
-                              ],
+                            Text(CurrencyFormatter.format(tx.amount), style: GoogleFonts.jetBrainsMono(color: const Color(0xFFffb4ab), fontWeight: FontWeight.bold, fontSize: 18)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            if ((Platform.isAndroid || Platform.isIOS) && amIPaying)
+                              _buildActionBtn(
+                                icon: Icons.payment,
+                                label: toUser.upiId != null && toUser.upiId!.isNotEmpty ? 'PAY VIA UPI' : 'ADD UPI & PAY',
+                                color: const Color(0xFFffb800),
+                                onTap: () => _handleUpiPayment(toUser, tx.amount),
+                              ),
+                            if ((Platform.isAndroid || Platform.isIOS) && amIPaying && (toUser.upiId == null || toUser.upiId!.isEmpty))
+                              _buildActionBtn(
+                                icon: Icons.qr_code_scanner,
+                                label: 'SCAN GPAY QR',
+                                color: const Color(0xFFe5e2e3),
+                                onTap: () => _scanGPayQr(toUser, tx.amount),
+                              ),
+                            if ((Platform.isAndroid || Platform.isIOS) && amIReceiving && fromUser.phoneNumber != null && fromUser.phoneNumber!.isNotEmpty)
+                              _buildActionBtn(
+                                icon: Icons.message,
+                                label: 'NUDGE',
+                                color: const Color(0xFFb8c3ff),
+                                onTap: () => IntentUtils.launchWhatsApp(context, fromUser.phoneNumber!, tx.amount),
+                              ),
+                            _buildActionBtn(
+                              icon: Icons.check,
+                              label: 'MARK SETTLED',
+                              color: const Color(0xFF16A34A),
+                              onTap: () => _showSettlementProofDialog(fromUser, toUser, tx.amount),
                             ),
                           ],
                         ),
-                      ),
+                      ],
                     ),
                   );
                 },
@@ -163,34 +131,45 @@ class _SettlementScreenState extends State<SettlementScreen> {
     );
   }
 
-  /// Scans a GPay/UPI QR code, extracts the UPI ID, saves it, and launches payment
+  Widget _buildActionBtn({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF131314),
+          border: Border.all(color: color),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 14),
+            const SizedBox(width: 8),
+            Text(label, style: GoogleFonts.jetBrainsMono(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _scanGPayQr(User toUser, double amount) async {
-    final scannedUpiId = await Navigator.push<String>(
+    final upiId = await Navigator.push<String>(
       context,
       MaterialPageRoute(
-        builder: (context) => _GPayQrScannerScreen(payeeName: toUser.name),
+        builder: (_) => _GPayQrScannerScreen(payeeName: toUser.name),
       ),
     );
 
-    if (scannedUpiId != null && scannedUpiId.isNotEmpty && mounted) {
-      // Save the UPI ID permanently to the user's profile
+    if (upiId != null && upiId.isNotEmpty && mounted) {
       final userProvider = context.read<UserProvider>();
-      final updated = toUser.copyWith(upiId: scannedUpiId);
+      final updated = toUser.copyWith(upiId: upiId);
       await userProvider.updateUser(updated);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✓ Saved UPI ID: $scannedUpiId for ${toUser.name}'),
-          ),
-        );
-        // Now launch UPI with the saved ID and pre-filled amount
-        await IntentUtils.launchUpi(context, scannedUpiId, toUser.name, amount);
-      }
+      
+      // ignore: use_build_context_synchronously
+      await IntentUtils.launchUpi(context, upiId, toUser.name, amount);
     }
   }
 
-  /// Handles UPI payment — if UPI ID is missing, prompts to add it first
   Future<void> _handleUpiPayment(User toUser, double amount) async {
     if (toUser.upiId != null && toUser.upiId!.isNotEmpty) {
       // UPI ID exists — launch directly

@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -323,12 +324,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        backgroundColor: const Color(0xFF131314),
         appBar: AppBar(
-          title: const Text('Add Expense'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(icon: Icon(Icons.edit), text: 'Manual Entry'),
-              Tab(icon: Icon(Icons.auto_awesome), text: 'Auto-Parse'),
+          backgroundColor: const Color(0xFF131314),
+          title: Text('NEW EXPENSE', style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold, color: const Color(0xFFe5e2e3))),
+          bottom: TabBar(
+            indicatorColor: const Color(0xFFffb800),
+            labelColor: const Color(0xFFffb800),
+            unselectedLabelColor: const Color(0xFF9e8f78),
+            labelStyle: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold, fontSize: 12),
+            unselectedLabelStyle: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold, fontSize: 12),
+            tabs: const [
+              Tab(icon: Icon(Icons.edit), text: 'MANUAL_ENTRY'),
+              Tab(icon: Icon(Icons.auto_awesome), text: 'AUTO_PARSE'),
             ],
           ),
         ),
