@@ -32,7 +32,7 @@ class _PresetsScreenState extends State<PresetsScreen> {
     );
   }
 
-  void _useTemplate(ExpenseTemplate template) {
+  Future<void> _useTemplate(ExpenseTemplate template) async {
     final expense = Expense(
       title: template.title,
       totalAmount: template.amount,
@@ -63,6 +63,8 @@ class _PresetsScreenState extends State<PresetsScreen> {
       splits: splits.isEmpty ? [ExpenseSplit(expenseId: 0, userId: context.read<UserProvider>().currentUser?.id ?? 0, amountOwed: template.amount)] : splits,
     );
     await context.read<BalanceProvider>().recalculateBalances();
+    
+    if (!mounted) return;
     
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Expense added from preset')),
