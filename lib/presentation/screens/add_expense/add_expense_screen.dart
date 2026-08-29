@@ -597,7 +597,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   Widget _buildSplitSection(List<User> users, ColorScheme cs, TextTheme tt) {
-    final totalAmount = double.tryParse(_amountController.text) ?? 0;
+    final subtotal = double.tryParse(_amountController.text) ?? 0;
+    final tax = double.tryParse(_taxController.text) ?? 0;
+    final totalAmount = subtotal + tax;
     final selectedUsers =
         users.where((u) => _selectedUserIds.contains(u.id)).toList();
 
@@ -613,12 +615,27 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             final perPerson = selectedUsers.isEmpty
                 ? 0.0
                 : totalAmount / selectedUsers.length;
+            final userSubtotal = selectedUsers.isEmpty ? 0.0 : subtotal / selectedUsers.length;
+            final userTax = selectedUsers.isEmpty ? 0.0 : tax / selectedUsers.length;
+            
             return ListTile(
               leading: CircleAvatar(child: Text(user.name[0])),
               title: Text(user.name),
+              subtitle: tax > 0 
+                ? Text('+ ${CurrencyFormatter.format(userTax)} tax = ${CurrencyFormatter.format(perPerson)}', style: tt.bodySmall?.copyWith(color: cs.primary, fontSize: 11))
+                : null,
               trailing: Text(CurrencyFormatter.format(perPerson)),
             );
           } else if (_splitMode == SplitMode.specific) {
+            final userSubtotal = double.tryParse(_specificControllers[user.id!]?.text ?? '0') ?? 0;
+            final subtotal = double.tryParse(_amountController.text) ?? 0;
+            final tax = double.tryParse(_taxController.text) ?? 0;
+            double userTax = 0;
+            if (subtotal > 0) {
+              userTax = tax * (userSubtotal / subtotal);
+            }
+            final userTotal = userSubtotal + userTax;
+
             return Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Row(
@@ -626,7 +643,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   CircleAvatar(
                       radius: 16, child: Text(user.name[0])),
                   const SizedBox(width: AppSpacing.md),
-                  Expanded(child: Text(user.name)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(user.name),
+                        if (tax > 0)
+                          Text(
+                            '+ ${CurrencyFormatter.format(userTax)} tax = ${CurrencyFormatter.format(userTotal)}',
+                            style: tt.bodySmall?.copyWith(color: cs.primary, fontSize: 11),
+                          ),
+                      ],
+                    ),
+                  ),
                   SizedBox(
                     width: 120,
                     child: TextFormField(
@@ -634,7 +663,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
                       decoration:
-                          const InputDecoration(labelText: '₹ Amount'),
+                          const InputDecoration(labelText: '₹ Subtotal'),
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
@@ -642,6 +671,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ),
             );
           } else {
+            final userRatio = double.tryParse(_ratioControllers[user.id!]?.text ?? '0') ?? 0;
+            final userTax = tax * (userRatio / 100);
+            final userTotal = totalAmount * (userRatio / 100);
+
             return Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Row(
@@ -649,7 +682,24 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   CircleAvatar(
                       radius: 16, child: Text(user.name[0])),
                   const SizedBox(width: AppSpacing.md),
-                  Expanded(child: Text(user.name)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(user.name),
+                        if (tax > 0)
+                          Text(
+                            '+ ${CurrencyFormatter.format(userTax)} tax = ${CurrencyFormatter.format(userTotal)}',
+                            style: tt.bodySmall?.copyWith(color: cs.primary, fontSize: 11),
+                          ),
+                        if (tax == 0 && userTotal > 0)
+                          Text(
+                            '= ${CurrencyFormatter.format(userTotal)}',
+                            style: tt.bodySmall?.copyWith(color: cs.primary, fontSize: 11),
+                          ),
+                      ],
+                    ),
+                  ),
                   SizedBox(
                     width: 120,
                     child: TextFormField(
