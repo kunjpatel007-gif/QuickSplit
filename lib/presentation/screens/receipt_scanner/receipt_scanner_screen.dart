@@ -204,15 +204,20 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
 
     final currentUserId = userProvider.currentUser?.id ?? 0;
 
-    await expenseProvider.addExpense(
-      expense: expense,
-      payers: [ExpensePayer(expenseId: 0, userId: currentUserId, amountPaid: _totalAmount)],
-      splits: splits,
-    );
-    await Provider.of<BalanceProvider>(context, listen: false).recalculateBalances();
-
-    if (mounted) {
-      Navigator.pop(context);
+    try {
+      await expenseProvider.addExpense(
+        expense: expense,
+        payers: [ExpensePayer(expenseId: 0, userId: currentUserId, amountPaid: _totalAmount)],
+        splits: splits,
+      );
+      await Provider.of<BalanceProvider>(context, listen: false).recalculateBalances();
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+        );
+      }
     }
   }
 

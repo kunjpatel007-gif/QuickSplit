@@ -194,14 +194,21 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         break;
     }
 
-    await context.read<ExpenseProvider>().addExpense(
-          expense: expense,
-          payers: payers,
-          splits: splits,
+    try {
+      await context.read<ExpenseProvider>().addExpense(
+            expense: expense,
+            payers: payers,
+            splits: splits,
+          );
+      await context.read<BalanceProvider>().recalculateBalances();
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
         );
-    await context.read<BalanceProvider>().recalculateBalances();
-
-    if (mounted) Navigator.pop(context);
+      }
+    }
   }
 
   @override

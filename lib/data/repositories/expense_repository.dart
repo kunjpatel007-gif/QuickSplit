@@ -83,6 +83,17 @@ class ExpenseRepository {
     }
     return null;
   }
+  
+  Future<bool> doesExpenseTitleExist(String title) async {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'Expenses',
+      where: 'title = ? COLLATE NOCASE', // Case insensitive check
+      whereArgs: [title],
+      limit: 1,
+    );
+    return maps.isNotEmpty;
+  }
 
   Future<int> insertExpensePayer(ExpensePayer payer) async {
     final db = await _dbHelper.database;

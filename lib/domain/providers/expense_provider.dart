@@ -64,6 +64,11 @@ class ExpenseProvider extends ChangeNotifier {
     required List<ExpensePayer> payers,
     required List<ExpenseSplit> splits,
   }) async {
+    final exists = await _expenseRepository.doesExpenseTitleExist(expense.title);
+    if (exists) {
+      throw Exception('An expense with the title "${expense.title}" already exists. Please use a unique name.');
+    }
+
     final expenseId = await _expenseRepository.insertExpense(expense);
 
     for (var payer in payers) {

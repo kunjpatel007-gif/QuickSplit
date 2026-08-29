@@ -252,12 +252,16 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
         }
       }
 
-      await expenseProvider.addExpense(
-        expense: expense,
-        payers: payers,
-        splits: splits,
-      );
-      importedCount++;
+      try {
+        await expenseProvider.addExpense(
+          expense: expense,
+          payers: payers,
+          splits: splits,
+        );
+        importedCount++;
+      } catch (e) {
+        skippedCount++; // Count as duplicate/error and skip
+      }
     }
 
     if (importedCount > 0) {

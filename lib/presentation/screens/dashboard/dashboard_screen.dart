@@ -319,41 +319,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 final currentUser = context
                                     .read<UserProvider>()
                                     .currentUser;
-                                await context
-                                    .read<ExpenseProvider>()
-                                    .addExpense(
-                                      expense: expense,
-                                      payers: payers.isEmpty
-                                          ? [
-                                              ExpensePayer(
-                                                expenseId: 0,
-                                                userId: currentUser?.id ?? 0,
-                                                amountPaid: template.amount,
-                                              ),
-                                            ]
-                                          : payers,
-                                      splits: splits.isEmpty
-                                          ? [
-                                              ExpenseSplit(
-                                                expenseId: 0,
-                                                userId: currentUser?.id ?? 0,
-                                                amountOwed: template.amount,
-                                              ),
-                                            ]
-                                          : splits,
+                                try {
+                                  await context
+                                      .read<ExpenseProvider>()
+                                      .addExpense(
+                                        expense: expense,
+                                        payers: payers.isEmpty
+                                            ? [
+                                                ExpensePayer(
+                                                  expenseId: 0,
+                                                  userId: currentUser?.id ?? 0,
+                                                  amountPaid: template.amount,
+                                                ),
+                                              ]
+                                            : payers,
+                                        splits: splits.isEmpty
+                                            ? [
+                                                ExpenseSplit(
+                                                  expenseId: 0,
+                                                  userId: currentUser?.id ?? 0,
+                                                  amountOwed: template.amount,
+                                                ),
+                                              ]
+                                            : splits,
+                                      );
+                                  await context
+                                      .read<BalanceProvider>()
+                                      .recalculateBalances();
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content:
+                                              Text('Quick added from preset')),
                                     );
-                                if (!context.mounted) return;
-                                await context
-                                    .read<BalanceProvider>()
-                                    .recalculateBalances();
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      '✓ "${template.title}" logged instantly',
-                                    ),
-                                  ),
-                                );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(e
+                                              .toString()
+                                              .replaceAll('Exception: ', ''))),
+                                    );
+                                  }
+                                }
                               },
                             ),
                           );
