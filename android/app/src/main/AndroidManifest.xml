@@ -59,8 +59,12 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Custom scheme -->
                 <data android:scheme="quicksplit" android:host="sync" />
                 <data android:scheme="quicksplit" android:host="add" />
+                <!-- HTTP/HTTPS scheme (clickable in WhatsApp) -->
+                <data android:scheme="http" android:host="quicksplit.app" />
+                <data android:scheme="https" android:host="quicksplit.app" />
             </intent-filter>
         </activity>
 

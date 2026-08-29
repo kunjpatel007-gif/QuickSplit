@@ -60,9 +60,16 @@ class _CampusQuickSplitAppState extends State<CampusQuickSplitApp> {
   }
 
   void _handleIncomingLink(Uri uri) {
-    if (uri.scheme != 'quicksplit') return;
+    // Accept quicksplit:// or https://quicksplit.app
+    final isCustomScheme = uri.scheme == 'quicksplit';
+    final isHttpScheme = (uri.scheme == 'http' || uri.scheme == 'https') && uri.host == 'quicksplit.app';
+    
+    if (!isCustomScheme && !isHttpScheme) return;
+    
+    // For https://quicksplit.app/sync, the 'host' equivalent in the custom scheme is the first path segment
+    final action = isHttpScheme ? (uri.pathSegments.isNotEmpty ? uri.pathSegments.first : '') : uri.host;
 
-    if (uri.host == 'add') {
+    if (action == 'add') {
       final context = CampusQuickSplitApp.navigatorKey.currentContext;
       if (context != null) {
         Navigator.of(context).push(
@@ -72,7 +79,7 @@ class _CampusQuickSplitAppState extends State<CampusQuickSplitApp> {
       return;
     }
 
-    if (uri.host != 'sync') return;
+    if (action != 'sync') return;
 
     final encoded = uri.queryParameters['data'];
     if (encoded == null || encoded.isEmpty) return;

@@ -90,8 +90,9 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
     return base64Encode(compressedBytes);
   }
 
-  void _shareViaWhatsApp(String base64String) {
-    Share.share('Import my expenses in QuickSplit: quicksplit://sync?payload=$base64String');
+  void _shareViaWhatsApp(String base64String, {bool isProfile = false}) {
+    final text = isProfile ? 'Import my profile in QuickSplit:' : 'Import my expenses in QuickSplit:';
+    Share.share('$text https://quicksplit.app/sync?data=$base64String');
   }
 
   void _processScannedData(String data) {
@@ -321,6 +322,13 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
                           ),
                         ),
                         actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _shareViaWhatsApp(base64String, isProfile: true);
+                            },
+                            child: const Text('Share Link'),
+                          ),
                           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))
                         ],
                       ),
