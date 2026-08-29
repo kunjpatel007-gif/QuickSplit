@@ -267,7 +267,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             TextFormField(
               controller: _nlpController,
               decoration: const InputDecoration(
-                labelText: 'Magic Typer',
+                labelText: 'Auto-Parse',
                 prefixIcon: Icon(Icons.auto_fix_high),
                 hintText: 'e.g., Paid 500 for pizza with Rahul',
               ),

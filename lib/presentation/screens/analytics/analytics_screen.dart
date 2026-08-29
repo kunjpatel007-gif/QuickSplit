@@ -39,17 +39,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     _animationController.forward();
     _loadHistoricalData();
   }
-  
+
   Future<void> _loadHistoricalData() async {
     setState(() => _isLoading = true);
     final expenseRepo = context.read<ExpenseRepository>();
     final expenses = await expenseRepo.getAllExpensesHistorical();
-    
+
     double total = 0;
     for (var e in expenses) {
       total += e.totalAmount;
     }
-    
+
     if (mounted) {
       setState(() {
         _historicalExpenses = expenses;
@@ -80,7 +80,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     final expenses = _historicalExpenses;
     final totalSpending = _totalSpending;
 
-    final balanceProvider = Provider.of<BalanceProvider>(context, listen: false);
+    final balanceProvider = Provider.of<BalanceProvider>(
+      context,
+      listen: false,
+    );
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final balances = balanceProvider.balances as Map<int, double>;
 
