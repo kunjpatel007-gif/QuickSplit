@@ -27,6 +27,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   SplitMode _splitMode = SplitMode.uniform;
   bool _isRecurring = false;
   int? _payerId;
+  Map<int, double> _multiPayerAmounts = {};
 
   Set<int> _selectedUserIds = {};
   final Map<int, TextEditingController> _specificControllers = {};
@@ -83,7 +84,24 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         final users = context.read<UserProvider>().users;
         final currentUser = context.read<UserProvider>().currentUser;
         
-        if (parsed.payerName != null && parsed.payerName!.isNotEmpty) {
+        _multiPayerAmounts.clear();
+        if (parsed.multiPayers.isNotEmpty) {
+          parsed.multiPayers.forEach((pName, pAmount) {
+            final pLower = pName.toLowerCase();
+            User? matchedUser;
+            if (pLower == 'i' || pLower == 'me' || pLower == 'my') {
+              matchedUser = currentUser;
+            } else {
+              matchedUser = users.where((u) => u.name.toLowerCase() == pLower).firstOrNull;
+            }
+            if (matchedUser != null && matchedUser.id != null) {
+              _multiPayerAmounts[matchedUser.id!] = pAmount;
+              if (!_selectedUserIds.contains(matchedUser.id!)) {
+                _selectedUserIds.add(matchedUser.id!);
+              }
+            }
+          });
+        } else if (parsed.payerName != null && parsed.payerName!.isNotEmpty) {
           final matchedUser = users.where((u) => 
             u.name.toLowerCase() == parsed.payerName!.toLowerCase()
           ).firstOrNull;
@@ -188,7 +206,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       return;
     }
 
-    if (_payerId == null) {
+    if (_payerId == null && _multiPayerAmounts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select who paid')),
       );
@@ -206,13 +224,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       isRecurring: _isRecurring,
     );
 
-    final payers = [
-      ExpensePayer(
-        expenseId: 0,
-        userId: _payerId!,
-        amountPaid: amount,
-      ),
-    ];
+    final payers = <ExpensePayer>[];
+    if (_multiPayerAmounts.isNotEmpty) {
+      _multiPayerAmounts.forEach((uid, amt) {
+        payers.add(ExpensePayer(expenseId: 0, userId: uid, amountPaid: amt));
+      });
+    } else {
+      payers.add(ExpensePayer(expenseId: 0, userId: _payerId!, amountPaid: amount));
+    }
 
     List<ExpenseSplit> splits;
     switch (_splitMode) {
@@ -337,25 +356,61 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               },
             ),
             const SizedBox(height: AppSpacing.lg),
-            DropdownButtonFormField<int>(
-              value: _payerId,
-              decoration: const InputDecoration(
-                labelText: 'Paid By',
-                prefixIcon: Icon(Icons.person),
+            if (_multiPayerAmounts.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: cs.primaryContainer.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: cs.primary.withOpacity(0.2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.people, size: 20, color: cs.primary),
+                        const SizedBox(width: 8),
+                        Text('Paid By (Pooled)', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    ..._multiPayerAmounts.entries.map((e) {
+                      final uName = users.where((u) => u.id == e.key).firstOrNull?.name ?? 'Unknown';
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(uName),
+                            Text(CurrencyFormatter.format(e.value), style: const TextStyle(fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              )
+            else
+              DropdownButtonFormField<int>(
+                value: _payerId,
+                decoration: const InputDecoration(
+                  labelText: 'Paid By',
+                  prefixIcon: Icon(Icons.person),
+                ),
+                items: users.map((u) {
+                  return DropdownMenuItem<int>(
+                    value: u.id,
+                    child: Text(u.name),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _payerId = val;
+                  });
+                },
+                validator: (val) => val == null ? 'Select who paid' : null,
               ),
-              items: users.map((u) {
-                return DropdownMenuItem<int>(
-                  value: u.id,
-                  child: Text(u.name),
-                );
-              }).toList(),
-              onChanged: (val) {
-                setState(() {
-                  _payerId = val;
-                });
-              },
-              validator: (val) => val == null ? 'Select who paid' : null,
-            ),
             const SizedBox(height: AppSpacing.lg),
             Text('Split Mode', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: AppSpacing.sm),

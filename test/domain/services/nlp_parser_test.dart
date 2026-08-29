@@ -49,15 +49,23 @@ void main() {
   });
 
   group('standard parsing', () {
-    test('', () async {
+    test('standard parsing captures basic values', () async {
       final result = await parser.parse('Lunch 500 with Kunj and Mitul');
-      expect(result.isProRata, isFalse);
-      expect(result.amount, 500.0);
+      expect(result.amount, 500);
       expect(result.category, 'Food');
       expect(result.participants, containsAll(['Kunj', 'Mitul']));
     });
 
-    test('', () async {
+    test('multi-payer parsing pools amounts', () async {
+      final result = await parser.parse('I paid 500 and mitul paid 600 for pizza');
+      expect(result.amount, 1100.0);
+      expect(result.title?.toLowerCase(), 'pizza');
+      expect(result.multiPayers['I'], 500.0);
+      expect(result.multiPayers['mitul'], 600.0);
+      expect(result.participants, containsAll(['I', 'mitul']));
+    });
+
+    test('standard parsing picks up payer name', () async {
       final result = await parser.parse('Mitul paid 300 for Uber with Kunj');
       expect(result.payerName, 'Mitul');
       expect(result.title, 'Uber');

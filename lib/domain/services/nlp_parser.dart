@@ -22,6 +22,7 @@ class ParsedExpense {
   final String? payerName;
   final List<String> participants;
   final DateTime? date;
+  final Map<String, double> multiPayers;
 
   // Pro-rata fields
   final bool isProRata;
@@ -35,6 +36,7 @@ class ParsedExpense {
     this.payerName,
     this.participants = const [],
     this.date,
+    this.multiPayers = const {},
     this.isProRata = false,
     this.taxAmount = 0.0,
     this.items = const [],
@@ -112,6 +114,12 @@ class NlpParser {
     caseSensitive: false,
   );
 
+  // "X paid Y" or "paid Y" clauses
+  static final RegExp _poolPayerRegExp = RegExp(
+    '(?:\\b([A-Za-z]+)\\s+)?\\bpaid\\s+(?:rs\\.?|₹|inr)?\\s*($_numPattern)',
+    caseSensitive: false,
+  );
+
   // Matches every tax-like mention so "tax 100 and tip 50" sums to 150.
   static final RegExp _taxRegExp = RegExp(
     r'\b(?:tax(?:es)?|gst|tip|service\s*charge|fee)s?\b[^\d]{0,15}(' + _numPattern + ')',
@@ -176,6 +184,10 @@ class NlpParser {
     try {
       final proRata = _tryParseProRata(trimmed);
       if (proRata != null) return proRata;
+      
+      final multiPayer = _tryParseMultiPayer(trimmed);
+      if (multiPayer != null) return multiPayer;
+
       return await _parseStandard(trimmed);
     } catch (_) {
       // Never let a partially-typed sentence crash the UI.
@@ -219,6 +231,51 @@ class NlpParser {
       isProRata: true,
       taxAmount: taxAmount,
       items: items,
+    );
+  }
+
+  ParsedExpense? _tryParseMultiPayer(String input) {
+    final matches = _poolPayerRegExp.allMatches(input);
+    if (matches.length < 2) return null; 
+
+    final multiPayers = <String, double>{};
+    double totalAmount = 0;
+
+    for (final m in matches) {
+      final rawPerson = m.group(1)?.trim();
+      final person = (rawPerson == null || rawPerson.isEmpty) ? 'I' : rawPerson;
+      final amt = _parseAmount(m.group(2)) ?? 0.0;
+      if (amt > 0) {
+        multiPayers[person] = (multiPayers[person] ?? 0) + amt;
+        totalAmount += amt;
+      }
+    }
+
+    if (multiPayers.length < 2) return null; 
+
+    final category = _inferCategory(input);
+    
+    String? title;
+    final forMatch = _forClauseRegExp.firstMatch(input);
+    if (forMatch != null) {
+      title = _stripTrailingPunctuation(forMatch.group(1)?.trim() ?? '');
+    }
+    if (title == null || title.isEmpty) {
+      var stripped = input;
+      for (final m in matches) {
+        stripped = stripped.replaceFirst(m.group(0)!, '');
+      }
+      stripped = stripped.replaceAll(_whitespaceRegExp, ' ').trim();
+      stripped = _stripTrailingPunctuation(stripped);
+      title = stripped.isNotEmpty ? stripped : null;
+    }
+
+    return ParsedExpense(
+      amount: totalAmount,
+      title: title,
+      category: category,
+      multiPayers: multiPayers,
+      participants: multiPayers.keys.toList(),
     );
   }
 
