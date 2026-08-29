@@ -230,7 +230,16 @@ class _HceTapPayScreenState extends State<HceTapPayScreen>
   }
 
   Future<void> _launchUpi(String upiId, String payeeName, double amount) async {
-    final uri = Uri.parse('upi://pay?pa=$upiId&pn=$payeeName&am=$amount&cu=INR');
+    final uri = Uri(
+      scheme: 'upi',
+      host: 'pay',
+      queryParameters: {
+        'pa': upiId,
+        'pn': payeeName,
+        'am': amount.toStringAsFixed(2),
+        'cu': 'INR',
+      },
+    );
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {

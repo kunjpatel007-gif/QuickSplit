@@ -357,7 +357,16 @@ class _SettlementScreenState extends State<SettlementScreen> {
   }
 
   Future<void> _launchUpi(String upiId, String name, double amount) async {
-    final url = Uri.parse('upi://pay?pa=$upiId&pn=$name&am=$amount&cu=INR');
+    final url = Uri(
+      scheme: 'upi',
+      host: 'pay',
+      queryParameters: {
+        'pa': upiId,
+        'pn': name,
+        'am': amount.toStringAsFixed(2),
+        'cu': 'INR',
+      },
+    );
     try {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (e) {
