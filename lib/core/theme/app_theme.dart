@@ -206,26 +206,26 @@ class AppTheme {
   // ══════════════════════════════════════════════════════════════
   static ThemeData get darkTheme {
     final colorScheme = ColorScheme.dark(
-      primary: const Color(0xFF818CF8),              // Indigo 400 (lighter for dark bg)
-      onPrimary: const Color(0xFF1E1B4B),
-      secondary: const Color(0xFF2DD4BF),            // Teal 400
-      onSecondary: const Color(0xFF042F2E),
-      primaryContainer: const Color(0xFF312E81),     // Indigo 900
-      onPrimaryContainer: const Color(0xFFC7D2FE),  // Indigo 200
-      secondaryContainer: const Color(0xFF134E4A),   // Teal 900
-      onSecondaryContainer: const Color(0xFF99F6E4), // Teal 200
-      tertiaryContainer: const Color(0xFF78350F),    // Amber 900
-      onTertiaryContainer: const Color(0xFFFDE68A),  // Amber 200
-      surface: const Color(0xFF121212),
-      onSurface: const Color(0xFFE5E5E5),
-      surfaceContainerHighest: const Color(0xFF1E1E1E),
-      onSurfaceVariant: const Color(0xFF9CA3AF),
-      outline: const Color(0xFF4B5563),
-      outlineVariant: const Color(0xFF374151),
-      error: const Color(0xFFF87171),                // Red 400
-      onError: const Color(0xFF450A0A),
-      errorContainer: const Color(0xFF7F1D1D),       // Red 900
-      onErrorContainer: const Color(0xFFFECACA),     // Red 200
+      primary: const Color(0xFF3FB950),              // Green
+      onPrimary: Colors.white,
+      secondary: const Color(0xFFD29922),            // Amber
+      onSecondary: Colors.white,
+      primaryContainer: const Color(0xFF161B22),     // Surface
+      onPrimaryContainer: const Color(0xFFE6EDF3),  // Text
+      secondaryContainer: const Color(0xFF30363D),   // Border
+      onSecondaryContainer: const Color(0xFF8B949E), // Muted
+      tertiaryContainer: const Color(0xFF161B22),    // Surface
+      onTertiaryContainer: const Color(0xFFE6EDF3),  // Text
+      surface: const Color(0xFF0D1117),              // Background
+      onSurface: const Color(0xFFE6EDF3),            // Text
+      surfaceContainerHighest: const Color(0xFF161B22), // Surface
+      onSurfaceVariant: const Color(0xFF8B949E),     // Muted
+      outline: const Color(0xFF30363D),              // Border
+      outlineVariant: const Color(0xFF30363D),
+      error: const Color(0xFFCF222E),                // Red
+      onError: Colors.white,
+      errorContainer: const Color(0xFFCF222E),       // Red
+      onErrorContainer: Colors.white,
       shadow: Colors.black,
     );
 
@@ -249,7 +249,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: _cardRadius),
-        color: const Color(0xFF1E1E1E),
+        color: const Color(0xFF161B22),
         surfaceTintColor: Colors.transparent,
       ),
 

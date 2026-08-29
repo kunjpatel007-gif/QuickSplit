@@ -222,7 +222,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Expanded(
                         child: OutlinedButton.icon(
                           icon: const Icon(Icons.bubble_chart, size: 18),
-                          label: const Text('View Debt Graph (Simplifier)'),
+                          label: const Text('View Debt Graph'),
                           onPressed: () {
                             Navigator.push(
                               context,
