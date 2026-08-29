@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
+import 'package:path_provider/path_provider.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -90,9 +93,43 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
     return base64Encode(compressedBytes);
   }
 
-  void _shareViaWhatsApp(String base64String, {bool isProfile = false}) {
-    final text = isProfile ? 'Import my profile in QuickSplit:' : 'Import my expenses in QuickSplit:';
-    Share.share('$text https://quicksplit.app/sync?data=$base64String');
+  Future<void> _shareViaWhatsApp(String base64String, {bool isProfile = false}) async {
+    final text = isProfile ? 'Import my profile in QuickSplit!' : 'Import my expenses in QuickSplit!';
+    
+    try {
+      final qrValidationResult = QrValidator.validate(
+        data: base64String,
+        version: QrVersions.auto,
+        errorCorrectionLevel: QrErrorCorrectLevel.L,
+      );
+      
+      final qrCode = qrValidationResult.qrCode;
+      if (qrCode == null) return;
+      
+      final painter = QrPainter.withQr(
+        qr: qrCode,
+        color: const Color(0xFF000000),
+        emptyColor: const Color(0xFFFFFFFF),
+        gapless: true,
+      );
+      
+      final picData = await painter.toImageData(1024, format: ui.ImageByteFormat.png);
+      if (picData == null) return;
+      
+      final buffer = picData.buffer.asUint8List();
+      final tempDir = await getTemporaryDirectory();
+      final file = await File('${tempDir.path}/quicksplit_qr.png').create();
+      await file.writeAsBytes(buffer);
+      
+      await Share.shareXFiles(
+        [XFile(file.path)], 
+        text: text,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to share QR image: $e')));
+      }
+    }
   }
 
   void _processScannedData(String data) {
@@ -327,7 +364,7 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
                               Navigator.pop(ctx);
                               _shareViaWhatsApp(base64String, isProfile: true);
                             },
-                            child: const Text('Share Link'),
+                            child: const Text('Share QR'),
                           ),
                           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))
                         ],
@@ -493,6 +530,34 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
         ),
         Center(
           child: Icon(Icons.qr_code_scanner, size: 250, color: cs.onSurface.withValues(alpha: 0.5)),
+        ),
+        Positioned(
+          bottom: 40,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: FilledButton.icon(
+              icon: const Icon(Icons.photo_library),
+              label: const Text('Select QR from Gallery'),
+              onPressed: () async {
+                final picker = ImagePicker();
+                final xFile = await picker.pickImage(source: ImageSource.gallery);
+                if (xFile != null) {
+                  final capture = await _scannerController?.analyzeImage(xFile.path);
+                  if (capture != null && capture.barcodes.isNotEmpty) {
+                    final val = capture.barcodes.first.rawValue;
+                    if (val != null) _processScannedData(val);
+                  } else {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No QR code found in the image.')),
+                      );
+                    }
+                  }
+                }
+              },
+            ),
+          ),
         ),
       ],
     );
