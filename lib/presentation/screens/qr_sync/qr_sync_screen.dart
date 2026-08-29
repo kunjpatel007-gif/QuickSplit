@@ -191,6 +191,25 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
         isDeleted: false,
       );
       
+      // Deduplication check
+      final existingExpenses = expenseProvider.expenses;
+      bool isDuplicate = false;
+      for (var ex in existingExpenses) {
+        if (ex.title == expense.title && ex.totalAmount == expense.totalAmount) {
+          if (ex.timestamp.year == expense.timestamp.year && 
+              ex.timestamp.month == expense.timestamp.month && 
+              ex.timestamp.day == expense.timestamp.day) {
+            isDuplicate = true;
+            break;
+          }
+        }
+      }
+      
+      if (isDuplicate) {
+        skippedCount++;
+        continue;
+      }
+      
       // Helper to resolve a user from a payer/split entry
       Future<User?> resolveUser(Map<String, dynamic> entry) async {
         final syncId = entry['syncId'] as String?;
