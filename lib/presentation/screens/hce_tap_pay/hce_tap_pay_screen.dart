@@ -232,24 +232,11 @@ class _HceTapPayScreenState extends State<HceTapPayScreen>
   Future<void> _launchUpi(String upiId, String payeeName, double amount) async {
     final uri = Uri.parse('upi://pay?pa=$upiId&pn=$payeeName&am=$amount&cu=INR');
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-        // _isProcessingRead will be reset when app resumes from background
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not find a UPI app to complete payment')),
-          );
-          setState(() {
-            _statusMessage = 'Could not find a UPI app to complete payment.';
-          });
-        }
-        _isProcessingRead = false;
-      }
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error launching UPI: $e')),
+          const SnackBar(content: Text('Could not find a UPI app to complete payment')),
         );
         setState(() {
           _statusMessage = 'Error launching UPI: $e';
