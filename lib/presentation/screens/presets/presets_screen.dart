@@ -57,11 +57,12 @@ class _PresetsScreenState extends State<PresetsScreen> {
       amountOwed: e['amountOwed'],
     )).toList();
     
-    context.read<ExpenseProvider>().addExpense(
+    await context.read<ExpenseProvider>().addExpense(
       expense: expense,
       payers: payers.isEmpty ? [ExpensePayer(expenseId: 0, userId: context.read<UserProvider>().currentUser?.id ?? 0, amountPaid: template.amount)] : payers,
       splits: splits.isEmpty ? [ExpenseSplit(expenseId: 0, userId: context.read<UserProvider>().currentUser?.id ?? 0, amountOwed: template.amount)] : splits,
     );
+    await context.read<BalanceProvider>().recalculateBalances();
     
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Expense added from preset')),

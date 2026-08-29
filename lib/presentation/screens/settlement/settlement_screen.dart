@@ -34,95 +34,131 @@ class _SettlementScreenState extends State<SettlementScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settlements'),
-      ),
-      body: transactions.isEmpty
-          ? const EmptyState(
-              icon: Icons.check_circle,
-              message: 'No settlements needed!',
-            )
-          : ListView.builder(
-              itemCount: transactions.length,
-              itemBuilder: (context, index) {
-                final tx = transactions[index];
-                final fromUser = userProvider.getUserById(tx.fromUserId);
-                final toUser = userProvider.getUserById(tx.toUserId);
+      appBar: AppBar(title: const Text('Settlements')),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await context.read<ExpenseProvider>().loadExpenses();
+          await context.read<BalanceProvider>().recalculateBalances();
+        },
+        child: transactions.isEmpty
+            ? SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Container(
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  alignment: Alignment.center,
+                  child: const EmptyState(
+                    icon: Icons.check_circle,
+                    message: 'No settlements needed!',
+                  ),
+                ),
+              )
+            : ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: transactions.length,
+                itemBuilder: (context, index) {
+                  final tx = transactions[index];
+                  final fromUser = userProvider.getUserById(tx.fromUserId);
+                  final toUser = userProvider.getUserById(tx.toUserId);
 
-                if (fromUser == null || toUser == null) {
-                  return const SizedBox.shrink();
-                }
+                  if (fromUser == null || toUser == null) {
+                    return const SizedBox.shrink();
+                  }
 
-                return StaggeredListItem(
-                  index: index,
-                  child: Card(
-                    margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  '${fromUser.name} owes ${toUser.name}',
-                                  style: tt.titleMedium,
-                                ),
-                              ),
-                              Text(
-                                CurrencyFormatter.format(tx.amount),
-                                style: tt.titleLarge?.copyWith(color: cs.error),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.lg),
-                          Wrap(
-                            spacing: AppSpacing.sm,
-                            runSpacing: AppSpacing.sm,
-                            children: [
-                              // UPI Button — only if you are the one paying!
-                              if ((Platform.isAndroid || Platform.isIOS) && userProvider.currentUser?.id == fromUser.id)
-                                ElevatedButton.icon(
-                                  onPressed: () => _handleUpiPayment(toUser, tx.amount),
-                                  icon: const Icon(Icons.payment, size: 18),
-                                  label: Text(
-                                    toUser.upiId != null && toUser.upiId!.isNotEmpty
-                                        ? 'Pay via UPI'
-                                        : 'Add UPI & Pay',
+                  return StaggeredListItem(
+                    index: index,
+                    child: Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: AppSpacing.sm,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '${fromUser.name} owes ${toUser.name}',
+                                    style: tt.titleMedium,
                                   ),
                                 ),
-                              // Scan GPay QR — only if you are the one paying and they don't have UPI ID
-                              if ((Platform.isAndroid || Platform.isIOS) &&
-                                  userProvider.currentUser?.id == fromUser.id &&
-                                  (toUser.upiId == null || toUser.upiId!.isEmpty))
-                                OutlinedButton.icon(
-                                  onPressed: () => _scanGPayQr(toUser, tx.amount),
-                                  icon: const Icon(Icons.qr_code_scanner, size: 18),
-                                  label: const Text('Scan GPay QR'),
+                                Text(
+                                  CurrencyFormatter.format(tx.amount),
+                                  style: tt.titleLarge?.copyWith(
+                                    color: cs.error,
+                                  ),
                                 ),
-                              // Nudge via WhatsApp - only if you are the one receiving!
-                              if ((Platform.isAndroid || Platform.isIOS) && userProvider.currentUser?.id == toUser.id && fromUser.phoneNumber != null && fromUser.phoneNumber!.isNotEmpty)
-                                OutlinedButton.icon(
-                                  onPressed: () => _launchWhatsApp(fromUser.phoneNumber!, tx.amount),
-                                  icon: const Icon(Icons.message, size: 18),
-                                  label: const Text('Nudge'),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: [
+                                // UPI Button — only if you are the one paying!
+                                if ((Platform.isAndroid || Platform.isIOS) &&
+                                    userProvider.currentUser?.id == fromUser.id)
+                                  ElevatedButton.icon(
+                                    onPressed: () =>
+                                        _handleUpiPayment(toUser, tx.amount),
+                                    icon: const Icon(Icons.payment, size: 18),
+                                    label: Text(
+                                      toUser.upiId != null &&
+                                              toUser.upiId!.isNotEmpty
+                                          ? 'Pay via UPI'
+                                          : 'Add UPI & Pay',
+                                    ),
+                                  ),
+                                // Scan GPay QR — only if you are the one paying and they don't have UPI ID
+                                if ((Platform.isAndroid || Platform.isIOS) &&
+                                    userProvider.currentUser?.id ==
+                                        fromUser.id &&
+                                    (toUser.upiId == null ||
+                                        toUser.upiId!.isEmpty))
+                                  OutlinedButton.icon(
+                                    onPressed: () =>
+                                        _scanGPayQr(toUser, tx.amount),
+                                    icon: const Icon(
+                                      Icons.qr_code_scanner,
+                                      size: 18,
+                                    ),
+                                    label: const Text('Scan GPay QR'),
+                                  ),
+                                // Nudge via WhatsApp - only if you are the one receiving!
+                                if ((Platform.isAndroid || Platform.isIOS) &&
+                                    userProvider.currentUser?.id == toUser.id &&
+                                    fromUser.phoneNumber != null &&
+                                    fromUser.phoneNumber!.isNotEmpty)
+                                  OutlinedButton.icon(
+                                    onPressed: () => _launchWhatsApp(
+                                      fromUser.phoneNumber!,
+                                      tx.amount,
+                                    ),
+                                    icon: const Icon(Icons.message, size: 18),
+                                    label: const Text('Nudge'),
+                                  ),
+                                // Mark Settled with proof
+                                TextButton.icon(
+                                  onPressed: () => _showSettlementProofDialog(
+                                    fromUser,
+                                    toUser,
+                                    tx.amount,
+                                  ),
+                                  icon: const Icon(Icons.check, size: 18),
+                                  label: const Text('Mark Settled'),
                                 ),
-                              // Mark Settled with proof
-                              TextButton.icon(
-                                onPressed: () => _showSettlementProofDialog(fromUser, toUser, tx.amount),
-                                icon: const Icon(Icons.check, size: 18),
-                                label: const Text('Mark Settled'),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
+      ),
     );
   }
 
@@ -143,7 +179,9 @@ class _SettlementScreenState extends State<SettlementScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('✓ Saved UPI ID: $scannedUpiId for ${toUser.name}')),
+          SnackBar(
+            content: Text('✓ Saved UPI ID: $scannedUpiId for ${toUser.name}'),
+          ),
         );
         // Now launch UPI with the saved ID and pre-filled amount
         await _launchUpi(scannedUpiId, toUser.name, amount);
@@ -184,7 +222,10 @@ class _SettlementScreenState extends State<SettlementScreen> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, controller.text.trim()),
               child: const Text('Save & Pay'),
@@ -207,7 +248,11 @@ class _SettlementScreenState extends State<SettlementScreen> {
 
   /// Shows the settlement proof dialog, then ACTUALLY creates a settlement expense
   /// to mathematically zero out the debt in the ledger
-  Future<void> _showSettlementProofDialog(User fromUser, User toUser, double amount) async {
+  Future<void> _showSettlementProofDialog(
+    User fromUser,
+    User toUser,
+    double amount,
+  ) async {
     final txIdController = TextEditingController();
     final result = await showDialog<String?>(
       context: context,
@@ -234,7 +279,10 @@ class _SettlementScreenState extends State<SettlementScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, txIdController.text.trim()),
             child: const Text('Confirm Settlement'),
@@ -246,7 +294,7 @@ class _SettlementScreenState extends State<SettlementScreen> {
     // result is null if cancelled, empty string if no TX ID entered, or the TX ID
     if (result != null && mounted) {
       final txLabel = result.isNotEmpty ? ' (TXN: $result)' : '';
-      
+
       // === MATH FIX: Create a real "Settlement" expense to zero out the debt ===
       // fromUser paid toUser the settlement amount.
       // We model this as: fromUser paid `amount`, and toUser owes `amount`.
@@ -310,13 +358,20 @@ class _SettlementScreenState extends State<SettlementScreen> {
 
   Future<void> _launchUpi(String upiId, String name, double amount) async {
     final url = Uri.parse('upi://pay?pa=$upiId&pn=$name&am=$amount&cu=INR');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No UPI app found. Please install Google Pay, PhonePe, or Paytm.')),
+      );
     }
   }
 
   Future<void> _launchWhatsApp(String phone, double amount) async {
-    final message = Uri.encodeComponent('Hey! You owe me ₹${amount.toStringAsFixed(2)} for our shared expenses on Campus QuickSplit.');
+    final message = Uri.encodeComponent(
+      'Hey! You owe me ₹${amount.toStringAsFixed(2)} for our shared expenses on Campus QuickSplit.',
+    );
     final url = Uri.parse('https://wa.me/$phone?text=$message');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -375,15 +430,10 @@ class _GPayQrScannerScreenState extends State<_GPayQrScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Scan ${widget.payeeName}\'s GPay QR'),
-      ),
+      appBar: AppBar(title: Text('Scan ${widget.payeeName}\'s GPay QR')),
       body: Stack(
         children: [
-          MobileScanner(
-            controller: _scannerController!,
-            onDetect: _onDetect,
-          ),
+          MobileScanner(controller: _scannerController!, onDetect: _onDetect),
           Positioned(
             bottom: 40,
             left: 20,

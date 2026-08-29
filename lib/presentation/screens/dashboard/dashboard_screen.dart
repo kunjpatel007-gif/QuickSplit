@@ -179,6 +179,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onRefresh: _loadData,
       child: CustomScrollView(
         controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverToBoxAdapter(
             child: Column(

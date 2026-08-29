@@ -196,6 +196,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
       payers: [ExpensePayer(expenseId: 0, userId: currentUserId, amountPaid: _totalAmount)],
       splits: splits,
     );
+    await Provider.of<BalanceProvider>(context, listen: false).recalculateBalances();
 
     if (mounted) {
       Navigator.pop(context);

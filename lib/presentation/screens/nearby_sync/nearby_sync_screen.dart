@@ -326,6 +326,7 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
         payers: payers,
         splits: splits,
       );
+      await context.read<BalanceProvider>().recalculateBalances();
 
       setState(() => _status = 'Received and saved "${expense.title}".');
     } catch (e) {

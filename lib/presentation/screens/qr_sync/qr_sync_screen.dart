@@ -240,6 +240,10 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
       );
       importedCount++;
     }
+
+    if (importedCount > 0) {
+      await context.read<BalanceProvider>().recalculateBalances();
+    }
     
     if (!mounted) return;
     
