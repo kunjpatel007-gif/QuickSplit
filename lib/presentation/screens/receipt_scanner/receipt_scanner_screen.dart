@@ -27,15 +27,14 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
   double _totalAmount = 0.0;
   double _taxTotal = 0.0;
   String _totalLabel = 'Total';
+  File? _receiptImage;
+  bool _isProcessing = false;
 
   @override
   void initState() {
     super.initState();
     if (!Platform.isWindows) {
       _textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scanReceipt();
-      });
     }
   }
 
@@ -47,16 +46,26 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
     super.dispose();
   }
 
-  Future<void> _scanReceipt() async {
+  Future<void> _pickImage(ImageSource source) async {
     if (Platform.isWindows) {
       _parseText(_pasteController.text);
       return;
     }
 
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+    final pickedFile = await picker.pickImage(source: source);
     
     if (pickedFile != null && _textRecognizer != null) {
+      setState(() {
+        _receiptImage = File(pickedFile.path);
+        _isProcessing = true;
+        _extractedItems.clear();
+        _taxLines.clear();
+        _assignedItems.clear();
+        _totalAmount = 0.0;
+        _taxTotal = 0.0;
+      });
+
       final inputImage = InputImage.fromFilePath(pickedFile.path);
       final recognizedText = await _textRecognizer!.processImage(inputImage);
       
@@ -150,6 +159,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
       _totalLabel = totalLabel;
       // Use parsed total; if none found, derive from items + taxes
       _totalAmount = total > 0 ? total : (itemsSubtotal + taxSubtotal);
+      _isProcessing = false;
     });
   }
 
@@ -224,7 +234,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
             ),
             const SizedBox(width: 16),
             ElevatedButton(
-              onPressed: _scanReceipt,
+              onPressed: () => _pickImage(ImageSource.camera),
               child: const Text('Parse'),
             ),
           ],
@@ -232,12 +242,75 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
       );
     }
     
+    if (_receiptImage != null) {
+      return Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                _receiptImage!,
+                height: 200,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retake'),
+                  onPressed: () => _pickImage(ImageSource.camera),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  label: const Text('Clear', style: TextStyle(color: Colors.red)),
+                  onPressed: () {
+                    setState(() {
+                      _receiptImage = null;
+                      _extractedItems.clear();
+                      _taxLines.clear();
+                      _assignedItems.clear();
+                    });
+                  },
+                ),
+              ],
+            )
+          ],
+        ),
+      );
+    }
+
     return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: ElevatedButton.icon(
-        icon: const Icon(Icons.camera_alt),
-        label: const Text('Scan Receipt'),
-        onPressed: _scanReceipt,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        children: [
+          const Icon(Icons.receipt_long, size: 64, color: Colors.grey),
+          const SizedBox(height: AppSpacing.md),
+          Text('Add a receipt image to extract items.', style: Theme.of(context).textTheme.bodyLarge),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton.icon(
+                icon: const Icon(Icons.camera_alt),
+                label: const Text('Camera'),
+                onPressed: () => _pickImage(ImageSource.camera),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.photo_library),
+                label: const Text('Gallery'),
+                onPressed: () => _pickImage(ImageSource.gallery),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -426,7 +499,12 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
       body: Column(
         children: [
           _buildScannerInput(),
-          if (_extractedItems.isNotEmpty || _assignedItems.isNotEmpty) ...[
+          if (_isProcessing)
+            const Padding(
+              padding: EdgeInsets.all(AppSpacing.xl),
+              child: CircularProgressIndicator(),
+            ),
+          if (!_isProcessing && (_extractedItems.isNotEmpty || _assignedItems.isNotEmpty)) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: TextField(
