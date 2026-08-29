@@ -62,8 +62,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     _nlpDebouncer = Timer(const Duration(milliseconds: 500), () async {
       if (_nlpController.text.isEmpty) return;
       
-      final parsed = await _nlpParser.parse(_nlpController.text);
-      if (!mounted) return;
+      final currentText = _nlpController.text;
+      final parsed = await _nlpParser.parse(currentText);
+      if (!mounted || _nlpController.text != currentText) return;
 
       setState(() {
         if (parsed.date != null) {
@@ -247,13 +248,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         break;
     }
 
+    final expenseProvider = context.read<ExpenseProvider>();
+    final balanceProvider = context.read<BalanceProvider>();
+
     try {
-      await context.read<ExpenseProvider>().addExpense(
+      await expenseProvider.addExpense(
             expense: expense,
             payers: payers,
             splits: splits,
           );
-      await context.read<BalanceProvider>().recalculateBalances();
+      await balanceProvider.recalculateBalances();
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
