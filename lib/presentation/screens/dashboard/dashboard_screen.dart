@@ -9,6 +9,7 @@ import 'package:campus_quicksplit/presentation/screens/audit_log/audit_log_scree
 import 'package:campus_quicksplit/presentation/screens/recycle_bin/recycle_bin_screen.dart';
 import 'package:campus_quicksplit/presentation/screens/settlement/settlement_screen.dart';
 import 'dart:convert';
+import 'package:campus_quicksplit/core/utils/template_utils.dart';
 import 'package:campus_quicksplit/presentation/screens/analytics/analytics_screen.dart';
 import 'package:campus_quicksplit/presentation/screens/debt_graph/debt_graph_screen.dart';
 import 'package:campus_quicksplit/presentation/screens/qr_sync/qr_sync_screen.dart';
@@ -282,70 +283,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             child: ActionChip(
                               label: Text(template.title),
                               onPressed: () async {
-                                final expense = Expense(
-                                  title: template.title,
-                                  totalAmount: template.amount,
-                                  category: template.category,
-                                  timestamp: DateTime.now(),
-                                  isRecurring: false,
-                                  isDeleted: false,
-                                );
-                                final List<dynamic> parsedPayers = jsonDecode(
-                                  template.payersJson,
-                                );
-                                final List<dynamic> parsedSplits = jsonDecode(
-                                  template.splitsJson,
-                                );
-                                final payers = parsedPayers
-                                    .map(
-                                      (e) => ExpensePayer(
-                                        expenseId: 0,
-                                        userId: e['userId'],
-                                        amountPaid: (e['amountPaid'] as num)
-                                            .toDouble(),
-                                      ),
-                                    )
-                                    .toList();
-                                final splits = parsedSplits
-                                    .map(
-                                      (e) => ExpenseSplit(
-                                        expenseId: 0,
-                                        userId: e['userId'],
-                                        amountOwed: (e['amountOwed'] as num)
-                                            .toDouble(),
-                                      ),
-                                    )
-                                    .toList();
-                                final currentUser = context
-                                    .read<UserProvider>()
-                                    .currentUser;
                                 try {
-                                  await context
-                                      .read<ExpenseProvider>()
-                                      .addExpense(
-                                        expense: expense,
-                                        payers: payers.isEmpty
-                                            ? [
-                                                ExpensePayer(
-                                                  expenseId: 0,
-                                                  userId: currentUser?.id ?? 0,
-                                                  amountPaid: template.amount,
-                                                ),
-                                              ]
-                                            : payers,
-                                        splits: splits.isEmpty
-                                            ? [
-                                                ExpenseSplit(
-                                                  expenseId: 0,
-                                                  userId: currentUser?.id ?? 0,
-                                                  amountOwed: template.amount,
-                                                ),
-                                              ]
-                                            : splits,
-                                      );
-                                  await context
-                                      .read<BalanceProvider>()
-                                      .recalculateBalances();
+                                  await TemplateUtils.applyTemplate(context, template);
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(

@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:campus_quicksplit/core/theme/app_theme.dart';
 import 'package:campus_quicksplit/data/models/models.dart';
 import 'package:campus_quicksplit/data/repositories/repositories.dart';
+import 'package:campus_quicksplit/core/utils/sync_utils.dart';
 import 'package:campus_quicksplit/domain/providers/providers.dart';
 import 'package:campus_quicksplit/presentation/screens/dashboard/dashboard_screen.dart';
 import 'package:campus_quicksplit/presentation/screens/add_expense/add_expense_screen.dart';
@@ -146,12 +147,7 @@ class _CampusQuickSplitAppState extends State<CampusQuickSplitApp> {
       List<ExpensePayer> payers = [];
       if (payload['payers'] != null) {
         for (var p in payload['payers']) {
-          User? user = await userRepo.getUserByName(p['userName']);
-          if (user == null) {
-            await userProvider.addUser(p['userName']);
-            await userProvider.loadUsers();
-            user = await userRepo.getUserByName(p['userName']);
-          }
+          final user = await SyncUtils.resolveUser(p as Map<String, dynamic>, userRepo, userProvider);
           if (user != null) {
             payers.add(ExpensePayer(expenseId: 0, userId: user.id!, amountPaid: (p['amountPaid'] as num).toDouble()));
           }
@@ -161,12 +157,7 @@ class _CampusQuickSplitAppState extends State<CampusQuickSplitApp> {
       List<ExpenseSplit> splits = [];
       if (payload['splits'] != null) {
         for (var s in payload['splits']) {
-          User? user = await userRepo.getUserByName(s['userName']);
-          if (user == null) {
-            await userProvider.addUser(s['userName']);
-            await userProvider.loadUsers();
-            user = await userRepo.getUserByName(s['userName']);
-          }
+          final user = await SyncUtils.resolveUser(s as Map<String, dynamic>, userRepo, userProvider);
           if (user != null) {
             splits.add(ExpenseSplit(expenseId: 0, userId: user.id!, amountOwed: (s['amountOwed'] as num).toDouble()));
           }

@@ -8,6 +8,7 @@ import 'package:campus_quicksplit/domain/providers/providers.dart';
 import 'package:campus_quicksplit/domain/services/hce_pay_service.dart';
 import 'package:campus_quicksplit/domain/services/services.dart';
 import 'package:campus_quicksplit/data/models/models.dart';
+import 'package:campus_quicksplit/core/utils/intent_utils.dart';
 import 'package:campus_quicksplit/data/repositories/repositories.dart';
 import 'package:campus_quicksplit/core/utils/currency_formatter.dart';
 import 'package:campus_quicksplit/core/theme/app_spacing.dart';
@@ -209,7 +210,8 @@ class _HceTapPayScreenState extends State<HceTapPayScreen>
           _settled = false;
           _statusMessage = 'Launching GPay for ${CurrencyFormatter.format(amount)}...';
         });
-        _launchUpi(peerUpi, peer.name, amount);
+        IntentUtils.launchUpi(context, peerUpi, peer.name, amount);
+        _isProcessingRead = false;
       }
       
     } else if (peerDebtToMe != null && peerDebtToMe.amount > 0) {
@@ -225,32 +227,6 @@ class _HceTapPayScreenState extends State<HceTapPayScreen>
         _settled = true;
         _statusMessage = '';
       });
-      _isProcessingRead = false;
-    }
-  }
-
-  Future<void> _launchUpi(String upiId, String payeeName, double amount) async {
-    final uri = Uri(
-      scheme: 'upi',
-      host: 'pay',
-      queryParameters: {
-        'pa': upiId,
-        'pn': payeeName,
-        'am': amount.toStringAsFixed(2),
-        'cu': 'INR',
-      },
-    );
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not find a UPI app to complete payment')),
-        );
-        setState(() {
-          _statusMessage = 'Error launching UPI: $e';
-        });
-      }
       _isProcessingRead = false;
     }
   }

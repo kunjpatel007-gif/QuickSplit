@@ -8,7 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:campus_quicksplit/data/models/models.dart';
 import 'package:campus_quicksplit/data/repositories/repositories.dart';
 import 'package:campus_quicksplit/domain/providers/providers.dart';
-
+import 'package:campus_quicksplit/core/utils/sync_utils.dart';
 /// "Nearby Sync" screen — uses `nearby_connections`
 /// (Bluetooth/Wi-Fi Direct under the hood).
 /// Supports:
@@ -225,7 +225,7 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
           (u) => u.id == p.userId,
           orElse: () => User(name: 'Unknown', createdAt: DateTime.now()),
         );
-        return {'syncId': user.syncId, 'userName': user.name, 'amountPaid': p.amountPaid};
+        return SyncUtils.buildUserPayload(user, p.amountPaid, 'amountPaid');
       }).toList();
 
       final splitsJson = splits.map((s) {
@@ -233,7 +233,7 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
           (u) => u.id == s.userId,
           orElse: () => User(name: 'Unknown', createdAt: DateTime.now()),
         );
-        return {'syncId': user.syncId, 'userName': user.name, 'amountOwed': s.amountOwed};
+        return SyncUtils.buildUserPayload(user, s.amountOwed, 'amountOwed');
       }).toList();
 
       expensesJson.add({
@@ -301,7 +301,7 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
         (u) => u.id == p.userId,
         orElse: () => User(name: 'Unknown', createdAt: DateTime.now()),
       );
-      return {'syncId': user.syncId, 'userName': user.name, 'amountPaid': p.amountPaid};
+      return SyncUtils.buildUserPayload(user, p.amountPaid, 'amountPaid');
     }).toList();
 
     final splitsJson = splits.map((s) {
@@ -309,7 +309,7 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
         (u) => u.id == s.userId,
         orElse: () => User(name: 'Unknown', createdAt: DateTime.now()),
       );
-      return {'syncId': user.syncId, 'userName': user.name, 'amountOwed': s.amountOwed};
+      return SyncUtils.buildUserPayload(user, s.amountOwed, 'amountOwed');
     }).toList();
 
     final payload = {
@@ -488,12 +488,7 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
         ? DateTime.parse(map['timestamp'] as String)
         : DateTime.now();
 
-    final isDuplicate = expenseProvider.expenses.any((ex) =>
-        ex.title == title &&
-        ex.totalAmount == amount &&
-        ex.timestamp.year == ts.year &&
-        ex.timestamp.month == ts.month &&
-        ex.timestamp.day == ts.day);
+    final isDuplicate = expenseProvider.expenses.any((ex) => SyncUtils.isDuplicateExpense(ex, title, amount, ts));
 
     if (isDuplicate) {
       if (mounted) setState(() => _status = 'Skipped duplicate: "$title".');
@@ -521,25 +516,7 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
 
   // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-  Future<User?> _resolveUser(
-    Map<String, dynamic> entry,
-    UserRepository userRepo,
-    UserProvider userProvider,
-  ) async {
-    final syncId = entry['syncId'] as String?;
-    final name = entry['userName'] as String;
-    User? user;
-    if (syncId != null && syncId.isNotEmpty) user = await userRepo.getUserBySyncId(syncId);
-    user ??= await userRepo.getUserByName(name);
-    if (user == null) {
-      await userRepo.insertUser(User(syncId: syncId ?? '', name: name, createdAt: DateTime.now()));
-      await userProvider.loadUsers();
-      user = syncId != null && syncId.isNotEmpty
-          ? await userRepo.getUserBySyncId(syncId)
-          : await userRepo.getUserByName(name);
-    }
-    return user;
-  }
+
 
   Future<List<ExpensePayer>> _resolvePayersFromJson(
     dynamic payersRaw,
@@ -550,7 +527,7 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
     if (payersRaw == null) return result;
     for (final p in payersRaw as List<dynamic>) {
       final m = p as Map<String, dynamic>;
-      final user = await _resolveUser(m, userRepo, userProvider);
+      final user = await SyncUtils.resolveUser(m, userRepo, userProvider);
       if (user != null) {
         result.add(ExpensePayer(
           expenseId: 0,
@@ -571,7 +548,7 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
     if (splitsRaw == null) return result;
     for (final s in splitsRaw as List<dynamic>) {
       final m = s as Map<String, dynamic>;
-      final user = await _resolveUser(m, userRepo, userProvider);
+      final user = await SyncUtils.resolveUser(m, userRepo, userProvider);
       if (user != null) {
         result.add(ExpenseSplit(
           expenseId: 0,

@@ -126,7 +126,7 @@ void main() async {
   final balanceProvider = BalanceProvider(
     expenseRepo: expenseRepo,
     balanceService: balanceService,
-    userRepo: userRepo,
+    settingsRepo: settingsRepo,
   );
   await balanceProvider.recalculateBalances();
 

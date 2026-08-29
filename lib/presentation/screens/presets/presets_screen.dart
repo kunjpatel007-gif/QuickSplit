@@ -9,6 +9,7 @@ import 'package:campus_quicksplit/core/utils/currency_formatter.dart';
 import 'package:campus_quicksplit/core/utils/input_validators.dart';
 import 'package:campus_quicksplit/core/theme/app_spacing.dart';
 import 'package:campus_quicksplit/presentation/widgets/widgets.dart';
+import 'package:campus_quicksplit/core/utils/template_utils.dart';
 
 class PresetsScreen extends StatefulWidget {
   const PresetsScreen({super.key});
@@ -33,37 +34,8 @@ class _PresetsScreenState extends State<PresetsScreen> {
   }
 
   Future<void> _useTemplate(ExpenseTemplate template) async {
-    final expense = Expense(
-      title: template.title,
-      totalAmount: template.amount,
-      category: template.category,
-      timestamp: DateTime.now(),
-      isRecurring: false,
-      isDeleted: false,
-    );
-    
-    final List<dynamic> parsedPayers = jsonDecode(template.payersJson);
-    final List<dynamic> parsedSplits = jsonDecode(template.splitsJson);
-    
-    final payers = parsedPayers.map((e) => ExpensePayer(
-      expenseId: 0,
-      userId: e['userId'],
-      amountPaid: e['amountPaid'],
-    )).toList();
-    
-    final splits = parsedSplits.map((e) => ExpenseSplit(
-      expenseId: 0,
-      userId: e['userId'],
-      amountOwed: e['amountOwed'],
-    )).toList();
-    
     try {
-      await context.read<ExpenseProvider>().addExpense(
-        expense: expense,
-        payers: payers.isEmpty ? [ExpensePayer(expenseId: 0, userId: context.read<UserProvider>().currentUser?.id ?? 0, amountPaid: template.amount)] : payers,
-        splits: splits.isEmpty ? [ExpenseSplit(expenseId: 0, userId: context.read<UserProvider>().currentUser?.id ?? 0, amountOwed: template.amount)] : splits,
-      );
-      await context.read<BalanceProvider>().recalculateBalances();
+      await TemplateUtils.applyTemplate(context, template);
       
       if (!mounted) return;
       

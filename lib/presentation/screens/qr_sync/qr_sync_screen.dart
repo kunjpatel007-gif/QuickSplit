@@ -70,12 +70,12 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
       
       final payersJson = payers.map((p) {
         final user = userProvider.users.firstWhere((u) => u.id == p.userId, orElse: () => User(name: 'Unknown', createdAt: DateTime.now()));
-        return {'syncId': user.syncId, 'userName': user.name, 'amountPaid': p.amountPaid};
+        return SyncUtils.buildUserPayload(user, p.amountPaid, 'amountPaid');
       }).toList();
 
       final splitsJson = splits.map((s) {
         final user = userProvider.users.firstWhere((u) => u.id == s.userId, orElse: () => User(name: 'Unknown', createdAt: DateTime.now()));
-        return {'syncId': user.syncId, 'userName': user.name, 'amountOwed': s.amountOwed};
+        return SyncUtils.buildUserPayload(user, s.amountOwed, 'amountOwed');
       }).toList();
 
       payloadList.add({
@@ -231,49 +231,17 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
       
       // Deduplication check
       final existingExpenses = expenseProvider.expenses;
-      bool isDuplicate = false;
-      for (var ex in existingExpenses) {
-        if (ex.title == expense.title && ex.totalAmount == expense.totalAmount) {
-          if (ex.timestamp.year == expense.timestamp.year && 
-              ex.timestamp.month == expense.timestamp.month && 
-              ex.timestamp.day == expense.timestamp.day) {
-            isDuplicate = true;
-            break;
-          }
-        }
-      }
+      final isDuplicate = existingExpenses.any((ex) => SyncUtils.isDuplicateExpense(ex, expense.title, expense.totalAmount, expense.timestamp));
       
       if (isDuplicate) {
         skippedCount++;
         continue;
       }
       
-      // Helper to resolve a user from a payer/split entry
-      Future<User?> resolveUser(Map<String, dynamic> entry) async {
-        final syncId = entry['syncId'] as String?;
-        final userName = entry['userName'] as String;
-        User? user;
-        if (syncId != null && syncId.isNotEmpty) {
-          user = await userRepo.getUserBySyncId(syncId);
-        }
-        user ??= await userRepo.getUserByName(userName);
-        if (user == null) {
-          final newUser = User(syncId: syncId ?? '', name: userName, createdAt: DateTime.now());
-          await userRepo.insertUser(newUser);
-          await userProvider.loadUsers();
-          if (syncId != null && syncId.isNotEmpty) {
-            user = await userRepo.getUserBySyncId(syncId);
-          } else {
-            user = await userRepo.getUserByName(userName);
-          }
-        }
-        return user;
-      }
-
       List<ExpensePayer> payers = [];
       if (expenseData['payers'] != null) {
         for (var p in expenseData['payers']) {
-          final user = await resolveUser(p as Map<String, dynamic>);
+          final user = await SyncUtils.resolveUser(p as Map<String, dynamic>, userRepo, userProvider);
           if (user != null) {
             payers.add(ExpensePayer(expenseId: 0, userId: user.id!, amountPaid: (p['amountPaid'] as num).toDouble()));
           }
@@ -283,7 +251,7 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
       List<ExpenseSplit> splits = [];
       if (expenseData['splits'] != null) {
         for (var s in expenseData['splits']) {
-          final user = await resolveUser(s as Map<String, dynamic>);
+          final user = await SyncUtils.resolveUser(s as Map<String, dynamic>, userRepo, userProvider);
           if (user != null) {
             splits.add(ExpenseSplit(expenseId: 0, userId: user.id!, amountOwed: (s['amountOwed'] as num).toDouble()));
           }

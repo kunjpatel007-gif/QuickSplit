@@ -9,6 +9,7 @@ import 'package:campus_quicksplit/data/models/models.dart';
 import 'package:campus_quicksplit/data/repositories/repositories.dart';
 import 'package:campus_quicksplit/core/utils/currency_formatter.dart';
 import 'package:campus_quicksplit/presentation/widgets/widgets.dart';
+import 'package:campus_quicksplit/core/utils/intent_utils.dart';
 import 'package:campus_quicksplit/core/theme/app_spacing.dart';
 import 'package:campus_quicksplit/presentation/widgets/staggered_list_item.dart';
 
@@ -132,7 +133,7 @@ class _SettlementScreenState extends State<SettlementScreen> {
                                     fromUser.phoneNumber != null &&
                                     fromUser.phoneNumber!.isNotEmpty)
                                   OutlinedButton.icon(
-                                    onPressed: () => _launchWhatsApp(
+                                    onPressed: () => IntentUtils.launchWhatsApp(context, 
                                       fromUser.phoneNumber!,
                                       tx.amount,
                                     ),
@@ -184,7 +185,7 @@ class _SettlementScreenState extends State<SettlementScreen> {
           ),
         );
         // Now launch UPI with the saved ID and pre-filled amount
-        await _launchUpi(scannedUpiId, toUser.name, amount);
+        await IntentUtils.launchUpi(context, scannedUpiId, toUser.name, amount);
       }
     }
   }
@@ -193,7 +194,7 @@ class _SettlementScreenState extends State<SettlementScreen> {
   Future<void> _handleUpiPayment(User toUser, double amount) async {
     if (toUser.upiId != null && toUser.upiId!.isNotEmpty) {
       // UPI ID exists — launch directly
-      await _launchUpi(toUser.upiId!, toUser.name, amount);
+      await IntentUtils.launchUpi(context, toUser.upiId!, toUser.name, amount);
     } else {
       // UPI ID missing — ask the user to enter it
       final controller = TextEditingController();
@@ -241,7 +242,7 @@ class _SettlementScreenState extends State<SettlementScreen> {
         await userProvider.updateUser(updated);
 
         // Now launch UPI with the saved ID
-        await _launchUpi(newUpiId, toUser.name, amount);
+        await IntentUtils.launchUpi(context, newUpiId, toUser.name, amount);
       }
     }
   }
@@ -356,36 +357,6 @@ class _SettlementScreenState extends State<SettlementScreen> {
     }
   }
 
-  Future<void> _launchUpi(String upiId, String name, double amount) async {
-    final url = Uri(
-      scheme: 'upi',
-      host: 'pay',
-      queryParameters: {
-        'pa': upiId,
-        'pn': name,
-        'am': amount.toStringAsFixed(2),
-        'cu': 'INR',
-      },
-    );
-    try {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No UPI app found. Please install Google Pay, PhonePe, or Paytm.')),
-      );
-    }
-  }
-
-  Future<void> _launchWhatsApp(String phone, double amount) async {
-    final message = Uri.encodeComponent(
-      'Hey! You owe me ₹${amount.toStringAsFixed(2)} for our shared expenses on Campus QuickSplit.',
-    );
-    final url = Uri.parse('https://wa.me/$phone?text=$message');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    }
-  }
 }
 
 /// Full-screen GPay QR scanner that extracts UPI ID from a payment QR code
