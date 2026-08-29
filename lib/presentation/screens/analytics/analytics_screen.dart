@@ -104,6 +104,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
                       animation: _animation,
                       builder: (context, _) {
                         return CustomPaint(
+                          size: Size.infinite,
                           painter: BrutalistDonutChartPainter(
                             categoryTotals: categoryTotals,
                             totalAmount: totalSpending,
@@ -137,6 +138,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
                       animation: _animation,
                       builder: (context, _) {
                         return CustomPaint(
+                          size: Size.infinite,
                           painter: BrutalistBarChartPainter(
                             expenses: expenses,
                             progress: _animation.value,
@@ -263,7 +265,9 @@ class BrutalistDonutChartPainter extends CustomPainter {
     if (totalAmount == 0) return;
     
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = min(size.width / 2, size.height / 2) - 15;
+    final radius = max(0.0, min(size.width / 2, size.height / 2) - 15.0);
+    if (radius <= 0) return;
+    
     final rect = Rect.fromCircle(center: center, radius: radius);
     
     double startAngle = -pi / 2;
@@ -272,11 +276,11 @@ class BrutalistDonutChartPainter extends CustomPainter {
     for (var entry in categoryTotals.entries) {
       final sweepAngle = (entry.value / totalAmount) * 2 * pi * progress;
       paint.color = _getBrutalistCategoryColor(entry.key);
-      canvas.drawArc(rect, startAngle, sweepAngle, false, paint);
       
-      // Draw border separator between arcs
-      final borderPaint = Paint()..color = const Color(0xFF131314)..style = PaintingStyle.stroke..strokeWidth = 4;
-      canvas.drawArc(rect, startAngle, sweepAngle, false, borderPaint);
+      final gap = 0.05;
+      final actualSweep = sweepAngle > gap ? sweepAngle - gap : sweepAngle;
+      
+      canvas.drawArc(rect, startAngle, actualSweep, false, paint);
       
       startAngle += sweepAngle;
     }
