@@ -67,14 +67,54 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       if (parsed.category != null) {
         _category = parsed.category!;
       }
+      
+      final users = context.read<UserProvider>().users;
+      final currentUser = context.read<UserProvider>().currentUser;
+      
       if (parsed.payerName != null && parsed.payerName!.isNotEmpty) {
-        final users = context.read<UserProvider>().users;
         final matchedUser = users.where((u) => 
           u.name.toLowerCase() == parsed.payerName!.toLowerCase()
         ).firstOrNull;
         if (matchedUser != null) {
           _payerId = matchedUser.id;
         }
+      }
+      
+      if (parsed.isProRata && parsed.items.isNotEmpty) {
+        _splitMode = SplitMode.specific;
+        
+        // Reset all specifics
+        for (var c in _specificControllers.values) {
+          c.text = '';
+        }
+        
+        double subtotal = parsed.items.fold(0, (sum, i) => sum + i.amount);
+        Map<int, double> userShares = {};
+        
+        for (var item in parsed.items) {
+          User? matchedUser;
+          final p = item.person.toLowerCase();
+          if (p == 'i' || p == 'me' || p == 'my') {
+            matchedUser = currentUser;
+            _payerId ??= currentUser?.id; // If I ordered it, assume I paid unless specified
+          } else {
+            matchedUser = users.where((u) => u.name.toLowerCase() == p).firstOrNull;
+          }
+          
+          if (matchedUser != null && matchedUser.id != null) {
+            double taxShare = subtotal > 0 ? (item.amount / subtotal) * parsed.taxAmount : 0;
+            double share = item.amount + taxShare;
+            userShares[matchedUser.id!] = (userShares[matchedUser.id!] ?? 0) + share;
+            
+            if (!_selectedUserIds.contains(matchedUser.id!)) {
+              _selectedUserIds.add(matchedUser.id!);
+            }
+          }
+        }
+        
+        userShares.forEach((uid, share) {
+          _specificControllers[uid]?.text = share.toStringAsFixed(2);
+        });
       }
     });
   }
