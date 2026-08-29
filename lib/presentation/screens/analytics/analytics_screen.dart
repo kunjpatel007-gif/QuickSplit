@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:campus_quicksplit/data/models/models.dart';
+import 'package:campus_quicksplit/data/repositories/repositories.dart';
 import 'package:campus_quicksplit/domain/providers/providers.dart';
 import 'package:campus_quicksplit/core/utils/currency_formatter.dart';
 import 'package:campus_quicksplit/core/constants/app_constants.dart';
