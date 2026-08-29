@@ -97,20 +97,19 @@ class NlpParser {
   };
 
   // Digits with optional Indian-style comma grouping and an optional
-  // 1-2 digit decimal, e.g. "500", "1,200", "1,00,000.50".
-  static const String _numPattern = r'\d[\d,]*(?:\.\d{1,2})?';
+  static const String _numPattern = r'\d+(?:,\d+)*(?:\.\d{1,2})?';
 
   static final RegExp _itemVerbRegExp =
-      RegExp(r'\b(ordered|got|had|bought|took)\b', caseSensitive: false);
+      RegExp(r'\b(ordered|orderd|got|had|bought|took)\b', caseSensitive: false);
 
   static final RegExp _itemWithForRegExp = RegExp(
-    '(?:\\b([A-Za-z]+)\\s+)?\\b(?:ordered|got|had|bought|took)\\s+(.+?)\\s+for\\s+(?:rs\\.?|₹|inr)?\\s*($_numPattern)',
+    '(?:\\b([A-Za-z]+)\\s+)?\\b(?:ordered|orderd|got|had|bought|took)\\s+(.+?)\\s+for\\s+(?:rs\\.?|₹|inr)?\\s*($_numPattern)',
     caseSensitive: false,
   );
 
   // Fallback for sentences that skip the word "for", e.g. "I got coffee 100".
   static final RegExp _itemNoForRegExp = RegExp(
-    '(?:\\b([A-Za-z]+)\\s+)?\\b(?:ordered|got|had|bought|took)\\s+([a-zA-Z][a-zA-Z\\s]*?)\\s+(?:rs\\.?|₹|inr)?\\s*($_numPattern)\\b',
+    '(?:\\b([A-Za-z]+)\\s+)?\\b(?:ordered|orderd|got|had|bought|took)\\s+([a-zA-Z][a-zA-Z\\s]*?)\\s+(?:rs\\.?|₹|inr)?\\s*($_numPattern)\\b',
     caseSensitive: false,
   );
 
@@ -120,9 +119,10 @@ class NlpParser {
     caseSensitive: false,
   );
 
-  // Matches every tax-like mention so "tax 100 and tip 50" sums to 150.
+  // Matches "tax 100", "100 tax", "125 taxes", "tip 50"
   static final RegExp _taxRegExp = RegExp(
-    r'\b(?:tax(?:es)?|gst|tip|service\s*charge|fee)s?\b[^\d]{0,15}(' + _numPattern + ')',
+    r'(?:\b(?:tax(?:es)?|gst|tip|service\s*charge|fee)s?\b\s*(?:is\s+|are\s+|was\s+|were\s+|for\s+|=)?\s*(' + _numPattern + '))|'
+    r'(?:(' + _numPattern + r')\s*(?:tax(?:es)?|gst|tip|service\s*charge|fee)s?\b)',
     caseSensitive: false,
   );
 
@@ -215,7 +215,7 @@ class NlpParser {
 
     double taxAmount = 0.0;
     for (final m in _taxRegExp.allMatches(input)) {
-      taxAmount += _parseAmount(m.group(1)) ?? 0.0;
+      taxAmount += _parseAmount(m.group(1) ?? m.group(2)) ?? 0.0;
     }
 
     final subtotal = items.fold<double>(0, (sum, i) => sum + i.amount);
@@ -253,6 +253,26 @@ class NlpParser {
 
     if (multiPayers.length < 2) return null; 
 
+    double taxAmount = 0.0;
+    for (final m in _taxRegExp.allMatches(input)) {
+      taxAmount += _parseAmount(m.group(1) ?? m.group(2)) ?? 0.0;
+    }
+
+    final items = <NlpItem>[];
+
+    if (taxAmount > 0 && totalAmount > 0) {
+      final oldMultiPayers = Map<String, double>.from(multiPayers);
+      multiPayers.clear();
+      oldMultiPayers.forEach((person, amt) {
+        items.add(NlpItem(person, 'Pooled', amt));
+        multiPayers[person] = amt + (amt / totalAmount) * taxAmount;
+      });
+    } else {
+      multiPayers.forEach((person, amt) {
+        items.add(NlpItem(person, 'Pooled', amt));
+      });
+    }
+
     final category = _inferCategory(input);
     
     String? title;
@@ -271,11 +291,14 @@ class NlpParser {
     }
 
     return ParsedExpense(
-      amount: totalAmount,
+      amount: totalAmount + taxAmount,
       title: title,
       category: category,
       multiPayers: multiPayers,
       participants: multiPayers.keys.toList(),
+      isProRata: true,
+      taxAmount: taxAmount,
+      items: items,
     );
   }
 

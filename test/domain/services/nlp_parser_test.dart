@@ -49,19 +49,31 @@ void main() {
   });
 
   group('standard parsing', () {
-    test('standard parsing captures basic values', () async {
+    test('handles trailing tax words', () async {
+      final result = await parser.parse('I ordered pasta for 600 and kunj ordered pizza for 800 and 125 taxes');
+      expect(result.isProRata, isTrue);
+      expect(result.amount, 1525.0);
+      expect(result.taxAmount, 125.0);
+    });
+
+    test('ignores stopwords in names', () async {
       final result = await parser.parse('Lunch 500 with Kunj and Mitul');
       expect(result.amount, 500);
       expect(result.category, 'Food');
       expect(result.participants, containsAll(['Kunj', 'Mitul']));
     });
 
-    test('multi-payer parsing pools amounts', () async {
-      final result = await parser.parse('I paid 500 and mitul paid 600 for pizza');
-      expect(result.amount, 1100.0);
-      expect(result.title?.toLowerCase(), 'pizza');
-      expect(result.multiPayers['I'], 500.0);
-      expect(result.multiPayers['mitul'], 600.0);
+    test('multi-payer parsing pools amounts and handles tax', () async {
+      final result = await parser.parse('I paid 500 and mitul paid 600 for pizza and 110 tax');
+      expect(result.amount, 1210.0);
+      expect(result.taxAmount, 110.0);
+      expect(result.title?.toLowerCase(), 'pizza and 110 tax');
+      expect(result.multiPayers['I'], 550.0);
+      expect(result.multiPayers['mitul'], 660.0);
+      expect(result.items.length, 2);
+      expect(result.items.firstWhere((i) => i.person == 'I').amount, 500.0);
+      expect(result.items.firstWhere((i) => i.person == 'mitul').amount, 600.0);
+      expect(result.isProRata, isTrue);
       expect(result.participants, containsAll(['I', 'mitul']));
     });
 
