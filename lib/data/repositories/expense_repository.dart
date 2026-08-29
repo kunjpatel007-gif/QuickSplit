@@ -23,6 +23,15 @@ class ExpenseRepository {
     );
     return maps.map((map) => Expense.fromMap(map)).toList();
   }
+  
+  Future<List<Expense>> getAllExpensesHistorical() async {
+    final db = await _dbHelper.database;
+    final maps = await db.query(
+      'Expenses',
+      orderBy: 'timestamp DESC',
+    );
+    return maps.map((map) => Expense.fromMap(map)).toList();
+  }
 
   Future<List<Expense>> getDeletedExpenses() async {
     final db = await _dbHelper.database;

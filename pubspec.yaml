@@ -43,6 +43,7 @@ dependencies:
   permission_handler: ^13.0.1
   nfc_manager: ^4.2.1
   uuid: ^4.6.0
+  google_generative_ai: ^0.4.7
 
 dev_dependencies:
   flutter_test:

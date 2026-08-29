@@ -21,6 +21,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
   late AnimationController _animationController;
   late Animation<double> _animation;
 
+  List<Expense> _historicalExpenses = [];
+  double _totalSpending = 0;
+  bool _isLoading = true;
+
   @override
   void initState() {
     super.initState();
@@ -33,6 +37,26 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
       curve: Curves.easeInOut,
     );
     _animationController.forward();
+    _loadHistoricalData();
+  }
+  
+  Future<void> _loadHistoricalData() async {
+    setState(() => _isLoading = true);
+    final expenseRepo = context.read<ExpenseRepository>();
+    final expenses = await expenseRepo.getAllExpensesHistorical();
+    
+    double total = 0;
+    for (var e in expenses) {
+      total += e.totalAmount;
+    }
+    
+    if (mounted) {
+      setState(() {
+        _historicalExpenses = expenses;
+        _totalSpending = total;
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -45,18 +69,19 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final expenseProvider = Provider.of<ExpenseProvider>(
-      context,
-      listen: false,
-    );
-    final balanceProvider = Provider.of<BalanceProvider>(
-      context,
-      listen: false,
-    );
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-    final expenses = expenseProvider.expenses as List<Expense>;
-    final totalSpending = balanceProvider.totalSpending as double;
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Spend Analytics')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final expenses = _historicalExpenses;
+    final totalSpending = _totalSpending;
+
+    final balanceProvider = Provider.of<BalanceProvider>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     final balances = balanceProvider.balances as Map<int, double>;
 
     Map<String, double> categoryTotals = {};
@@ -80,8 +105,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
       appBar: AppBar(title: const Text('Spend Analytics')),
       body: RefreshIndicator(
         onRefresh: () async {
-          await context.read<ExpenseProvider>().loadExpenses();
-          await context.read<BalanceProvider>().recalculateBalances();
+          await _loadHistoricalData();
         },
         child: expenses.isEmpty
             ? SingleChildScrollView(
