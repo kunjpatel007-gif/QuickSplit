@@ -27,6 +27,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   String _category = AppConstants.categories.first;
   SplitMode _splitMode = SplitMode.uniform;
   bool _isRecurring = false;
+  bool _isNlpParsed = false; // true after NLP has successfully parsed an expense
   int? _payerId;
   Map<int, double> _multiPayerAmounts = {};
 
@@ -78,6 +79,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           double subtotal = total - tax;
           _amountController.text = subtotal > 0 ? subtotal.toStringAsFixed(2) : total.toStringAsFixed(2);
           _taxController.text = tax > 0 ? tax.toStringAsFixed(2) : '';
+          _isNlpParsed = true;
         }
         if (parsed.title != null && parsed.title!.isNotEmpty) {
           _titleController.text = parsed.title!;
@@ -197,7 +199,26 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   void _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    // NLP tab doesn't have a Form wrapping it, so skip form validation
+    // but still check the basics manually
+    if (!_isNlpParsed) {
+      if (!_formKey.currentState!.validate()) return;
+    } else {
+      // Manual NLP validation
+      if (_titleController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Title is required')),
+        );
+        return;
+      }
+      final subtotalCheck = double.tryParse(_amountController.text);
+      if (subtotalCheck == null || subtotalCheck <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No valid amount was parsed')),
+        );
+        return;
+      }
+    }
     if (!_canSubmit()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -297,7 +318,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-    final users = userProvider.users as List<User>;
+    final users = userProvider.users;
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
@@ -340,7 +361,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          if (_titleController.text.isNotEmpty || _amountController.text.isNotEmpty) ...[
+          if (_isNlpParsed) ...[
             Text('Parsed Preview', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: AppSpacing.md),
             Card(
@@ -362,7 +383,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Subtotal:'),
-                        Text('₹' + (double.tryParse(_amountController.text) ?? 0).toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text('₹${(double.tryParse(_amountController.text) ?? 0).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -370,7 +391,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Tax / Overhead:'),
-                        Text('₹' + (double.tryParse(_taxController.text) ?? 0).toStringAsFixed(2), style: TextStyle(fontWeight: FontWeight.bold, color: cs.error)),
+                        Text('₹${(double.tryParse(_taxController.text) ?? 0).toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, color: cs.error)),
                       ],
                     ),
                     const Divider(),
@@ -378,9 +399,63 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Final Total:'),
-                        Text('₹' + ((double.tryParse(_amountController.text) ?? 0) + (double.tryParse(_taxController.text) ?? 0)).toStringAsFixed(2), style: tt.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                        Text(
+                          '₹${((double.tryParse(_amountController.text) ?? 0) + (double.tryParse(_taxController.text) ?? 0)).toStringAsFixed(2)}',
+                          style: tt.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        ),
                       ],
                     ),
+                    // Per-person breakdown
+                    Builder(builder: (context) {
+                      final users = context.read<UserProvider>().users;
+                      final selectedUsers = users.where((u) => _selectedUserIds.contains(u.id)).toList();
+                      final subtotal = double.tryParse(_amountController.text) ?? 0;
+                      final tax = double.tryParse(_taxController.text) ?? 0;
+
+                      if (selectedUsers.isEmpty) return const SizedBox();
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Divider(),
+                          Text('Per Person', style: tt.labelMedium?.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: AppSpacing.sm),
+                          ...selectedUsers.map((user) {
+                            double userSubtotal;
+                            if (_splitMode == SplitMode.specific) {
+                              userSubtotal = double.tryParse(_specificControllers[user.id!]?.text ?? '0') ?? 0;
+                            } else if (_splitMode == SplitMode.ratio) {
+                              final ratio = double.tryParse(_ratioControllers[user.id!]?.text ?? '0') ?? 0;
+                              userSubtotal = subtotal * (ratio / 100);
+                            } else {
+                              userSubtotal = selectedUsers.isEmpty ? 0 : subtotal / selectedUsers.length;
+                            }
+
+                            double userTax = subtotal > 0 ? tax * (userSubtotal / subtotal) : 0;
+                            final userTotal = userSubtotal + userTax;
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 3),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(radius: 14, child: Text(user.name[0], style: const TextStyle(fontSize: 11))),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(child: Text(user.name, style: tt.bodyMedium)),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text('₹${userTotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      if (tax > 0)
+                                        Text('(₹${userSubtotal.toStringAsFixed(2)} + ₹${userTax.toStringAsFixed(2)} tax)', style: tt.bodySmall?.copyWith(color: cs.primary, fontSize: 10)),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -615,7 +690,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             final perPerson = selectedUsers.isEmpty
                 ? 0.0
                 : totalAmount / selectedUsers.length;
-            final userSubtotal = selectedUsers.isEmpty ? 0.0 : subtotal / selectedUsers.length;
             final userTax = selectedUsers.isEmpty ? 0.0 : tax / selectedUsers.length;
             
             return ListTile(
