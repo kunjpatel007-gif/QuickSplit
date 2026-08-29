@@ -1,6 +1,6 @@
 import 'package:campus_quicksplit/data/models/models.dart';
 
-enum SplitMode { uniform, specific, ratio }
+enum SplitMode { uniform, specific, ratio, proRata }
 
 class SplitEngine {
   List<ExpenseSplit> calculateUniformSplit({
@@ -46,6 +46,48 @@ class SplitEngine {
     return splits;
   }
 
+  List<ExpenseSplit> calculateProRataSplit({
+    required int expenseId,
+    required Map<int, double> userDishTotals,
+    required double totalOverhead,
+  }) {
+    final List<ExpenseSplit> splits = [];
+    double subtotal = 0.0;
+    
+    for (var amount in userDishTotals.values) {
+      subtotal += amount;
+    }
+
+    if (subtotal <= 0) {
+      return calculateSpecificSplit(expenseId: expenseId, userAmounts: userDishTotals);
+    }
+
+    double calculatedTotal = 0.0;
+    userDishTotals.forEach((userId, amount) {
+      final double taxShare = (amount / subtotal) * totalOverhead;
+      final double finalAmount = double.parse((amount + taxShare).toStringAsFixed(2));
+      calculatedTotal += finalAmount;
+      splits.add(ExpenseSplit(
+        expenseId: expenseId,
+        userId: userId,
+        amountOwed: finalAmount,
+      ));
+    });
+
+    final expectedTotal = subtotal + totalOverhead;
+    final double remainder = double.parse((expectedTotal - calculatedTotal).toStringAsFixed(2));
+    
+    if (remainder != 0.0 && splits.isNotEmpty) {
+      splits[0] = ExpenseSplit(
+        expenseId: expenseId,
+        userId: splits[0].userId,
+        amountOwed: double.parse((splits[0].amountOwed + remainder).toStringAsFixed(2)),
+      );
+    }
+
+    return splits;
+  }
+
   List<ExpenseSplit> calculateRatioSplit({
     required int expenseId,
     required double totalAmount,
@@ -86,12 +128,12 @@ class SplitEngine {
     return splits;
   }
 
-  bool validateSpecificSplit(double totalAmount, Map<int, double> userAmounts) {
+  bool validateSpecificSplit(double totalAmount, Map<int, double> userAmounts, {double totalOverhead = 0.0}) {
     double sum = 0.0;
     for (final amount in userAmounts.values) {
       sum += amount;
     }
-    return (sum - totalAmount).abs() < 0.01;
+    return (sum + totalOverhead - totalAmount).abs() < 0.01;
   }
 
   bool validateRatioSplit(Map<int, double> userRatios) {

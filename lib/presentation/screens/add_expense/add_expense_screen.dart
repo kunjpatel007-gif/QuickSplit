@@ -22,6 +22,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _nlpController = TextEditingController();
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
+  final _taxController = TextEditingController();
 
   String _category = AppConstants.categories.first;
   SplitMode _splitMode = SplitMode.uniform;
@@ -112,12 +113,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         
         if (parsed.isProRata && parsed.items.isNotEmpty) {
           _splitMode = SplitMode.specific;
+          _taxController.text = parsed.taxAmount > 0 ? parsed.taxAmount.toStringAsFixed(2) : '';
           
           for (var c in _specificControllers.values) {
             c.text = '';
           }
           
-          double subtotal = parsed.items.fold(0, (sum, i) => sum + i.amount);
           Map<int, double> userShares = {};
           
           for (var item in parsed.items) {
@@ -131,9 +132,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             }
             
             if (matchedUser != null && matchedUser.id != null) {
-              double taxShare = subtotal > 0 ? (item.amount / subtotal) * parsed.taxAmount : 0;
-              double share = item.amount + taxShare;
-              userShares[matchedUser.id!] = (userShares[matchedUser.id!] ?? 0) + share;
+              userShares[matchedUser.id!] = (userShares[matchedUser.id!] ?? 0) + item.amount;
               
               if (!_selectedUserIds.contains(matchedUser.id!)) {
                 _selectedUserIds.add(matchedUser.id!);
@@ -154,6 +153,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     _nlpController.dispose();
     _titleController.dispose();
     _amountController.dispose();
+    _taxController.dispose();
     for (var c in _specificControllers.values) {
       c.dispose();
     }
@@ -167,12 +167,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   double _getRemainingSpecific() {
     final total = double.tryParse(_amountController.text) ?? 0;
+    final tax = double.tryParse(_taxController.text) ?? 0;
     double assigned = 0;
     for (var uid in _selectedUserIds) {
       assigned +=
           double.tryParse(_specificControllers[uid]?.text ?? '0') ?? 0;
     }
-    return total - assigned;
+    return total - tax - assigned;
   }
 
   double _getRatioSum() {
@@ -248,9 +249,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           userAmounts[uid] =
               double.tryParse(_specificControllers[uid]?.text ?? '0') ?? 0;
         }
-        splits = splitEngine.calculateSpecificSplit(
+        final double tax = double.tryParse(_taxController.text) ?? 0.0;
+        splits = splitEngine.calculateProRataSplit(
           expenseId: 0,
-          userAmounts: userAmounts,
+          userDishTotals: userAmounts,
+          totalOverhead: tax,
         );
         break;
       case SplitMode.ratio:
@@ -329,6 +332,21 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               validator: InputValidators.validateAmount,
               onChanged: (_) => setState(() {}),
             ),
+            if (_splitMode == SplitMode.specific) ...[
+              const SizedBox(height: AppSpacing.md),
+              TextFormField(
+                controller: _taxController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'Tax / Overhead (Optional)',
+                  prefixIcon: const Icon(Icons.receipt_long),
+                  helperText: 'Will be distributed proportionally',
+                  helperStyle: TextStyle(color: Theme.of(context).colorScheme.primary),
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            ],
             const SizedBox(height: AppSpacing.lg),
             DropdownButtonFormField<String>(
               value: _category,

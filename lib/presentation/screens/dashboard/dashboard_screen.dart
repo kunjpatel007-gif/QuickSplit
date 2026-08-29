@@ -15,7 +15,7 @@ import 'package:campus_quicksplit/presentation/screens/qr_sync/qr_sync_screen.da
 import 'package:campus_quicksplit/presentation/screens/nearby_sync/nearby_sync_screen.dart';
 import 'package:campus_quicksplit/presentation/screens/hce_tap_pay/hce_tap_pay_screen.dart';
 import 'package:campus_quicksplit/presentation/screens/receipt_scanner/receipt_scanner_screen.dart';
-import 'package:campus_quicksplit/presentation/screens/pro_rata/pro_rata_screen.dart';
+
 import 'package:campus_quicksplit/presentation/screens/presets/presets_screen.dart';
 import 'package:campus_quicksplit/core/theme/app_spacing.dart';
 import 'package:campus_quicksplit/presentation/widgets/staggered_list_item.dart';
@@ -222,27 +222,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Expanded(
                         child: OutlinedButton.icon(
                           icon: const Icon(Icons.bubble_chart, size: 18),
-                          label: const Text('Debt Graph'),
+                          label: const Text('View Debt Graph (Simplifier)'),
                           onPressed: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => const DebtGraphScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.receipt_long, size: 18),
-                          label: const Text('Pro-Rata Split'),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ProRataScreen(),
                               ),
                             );
                           },

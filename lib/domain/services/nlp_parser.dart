@@ -122,7 +122,7 @@ class NlpParser {
   // Matches "tax 100", "100 tax", "125 taxes", "tip 50"
   static final RegExp _taxRegExp = RegExp(
     r'(?:\b(?:tax(?:es)?|gst|tip|service\s*charge|fee)s?\b\s*(?:is\s+|are\s+|was\s+|were\s+|for\s+|=)?\s*(' + _numPattern + '))|'
-    r'(?:(' + _numPattern + r')\s*(?:tax(?:es)?|gst|tip|service\s*charge|fee)s?\b)',
+    r'(?:(' + _numPattern + r')\s*(?:tax(?:es)?|gst|tip|service\s*charge|fee)s?\b(?!\s*(?:is\s+|are\s+|was\s+|were\s+|for\s+|=)?\s*\d))',
     caseSensitive: false,
   );
 
