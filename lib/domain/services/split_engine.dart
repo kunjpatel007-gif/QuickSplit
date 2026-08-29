@@ -1,6 +1,6 @@
 import 'package:campus_quicksplit/data/models/models.dart';
 
-enum SplitMode { uniform, specific, ratio, proRata }
+enum SplitMode { uniform, specific, ratio }
 
 class SplitEngine {
   List<ExpenseSplit> calculateUniformSplit({
