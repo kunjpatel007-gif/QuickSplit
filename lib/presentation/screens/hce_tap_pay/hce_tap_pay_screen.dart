@@ -201,6 +201,7 @@ class _HceTapPayScreenState extends State<HceTapPayScreen>
           _settled = false;
           _statusMessage = '${peer.name} has no UPI ID saved. Ask them to add it first!';
         });
+        _isProcessingRead = false;
       } else {
         setState(() {
           _debtAmount = amount;
@@ -216,11 +217,15 @@ class _HceTapPayScreenState extends State<HceTapPayScreen>
         _debtAmount = peerDebtToMe!.amount;
         _peerOwesMe = true;
         _settled = false;
+        _statusMessage = '';
       });
+      _isProcessingRead = false;
     } else {
       setState(() {
         _settled = true;
+        _statusMessage = '';
       });
+      _isProcessingRead = false;
     }
   }
 
@@ -228,20 +233,29 @@ class _HceTapPayScreenState extends State<HceTapPayScreen>
     final uri = Uri.parse('upi://pay?pa=$upiId&pn=$payeeName&am=$amount&cu=INR');
     try {
       if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        // _isProcessingRead will be reset when app resumes from background
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Could not find a UPI app to complete payment')),
           );
+          setState(() {
+            _statusMessage = 'Could not find a UPI app to complete payment.';
+          });
         }
+        _isProcessingRead = false;
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error launching UPI: $e')),
         );
+        setState(() {
+          _statusMessage = 'Error launching UPI: $e';
+        });
       }
+      _isProcessingRead = false;
     }
   }
 
