@@ -2,17 +2,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:campus_quicksplit/domain/services/services.dart';
 import 'package:campus_quicksplit/domain/providers/providers.dart';
 import 'package:campus_quicksplit/data/models/models.dart';
 import 'package:campus_quicksplit/data/repositories/repositories.dart';
 import 'package:campus_quicksplit/core/utils/currency_formatter.dart';
-import 'package:campus_quicksplit/presentation/widgets/widgets.dart';
 import 'package:campus_quicksplit/core/utils/intent_utils.dart';
 import 'package:campus_quicksplit/core/theme/app_spacing.dart';
-import 'package:campus_quicksplit/presentation/widgets/staggered_list_item.dart';
 
 class SettlementScreen extends StatefulWidget {
   const SettlementScreen({super.key});

@@ -9,8 +9,6 @@ import 'package:campus_quicksplit/presentation/screens/settings/settings_screen.
 import 'package:campus_quicksplit/presentation/screens/audit_log/audit_log_screen.dart';
 import 'package:campus_quicksplit/presentation/screens/recycle_bin/recycle_bin_screen.dart';
 import 'package:campus_quicksplit/presentation/screens/settlement/settlement_screen.dart';
-import 'dart:convert';
-import 'package:campus_quicksplit/core/utils/template_utils.dart';
 import 'package:campus_quicksplit/presentation/screens/analytics/analytics_screen.dart';
 import 'package:campus_quicksplit/presentation/screens/debt_graph/debt_graph_screen.dart';
 import 'package:campus_quicksplit/presentation/screens/qr_sync/qr_sync_screen.dart';
@@ -19,8 +17,6 @@ import 'package:campus_quicksplit/presentation/screens/hce_tap_pay/hce_tap_pay_s
 import 'package:campus_quicksplit/presentation/screens/receipt_scanner/receipt_scanner_screen.dart';
 
 import 'package:campus_quicksplit/presentation/screens/presets/presets_screen.dart';
-import 'package:campus_quicksplit/core/theme/app_spacing.dart';
-import 'package:campus_quicksplit/presentation/widgets/staggered_list_item.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -197,7 +193,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final expenseProvider = context.watch<ExpenseProvider>();
     final balanceProvider = context.watch<BalanceProvider>();
     final userProvider = context.watch<UserProvider>();
-    final templateProvider = context.watch<TemplateProvider>();
     final expenses = expenseProvider.expenses;
     final balances = balanceProvider.balances;
 
@@ -337,17 +332,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          'TOTAL RECEIVABLE',
-                                          style: GoogleFonts.jetBrainsMono(
-                                            fontSize: 10,
-                                            color: const Color(0xFF9e8f78),
-                                            letterSpacing: 1.0,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '₹',
+                                        Text('TOTAL RECEIVABLE', style: GoogleFonts.jetBrainsMono(fontSize: 10, color: const Color(0xFF9e8f78), letterSpacing: 1.0, ), ), const SizedBox(height: 4), Text('₹${totalOwedToMe.toStringAsFixed(0)}',
                                           style: GoogleFonts.jetBrainsMono(
                                             color: const Color(0xFFe5e2e3),
                                             fontWeight: FontWeight.bold,
@@ -361,17 +346,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          'TOTAL PAYABLE',
-                                          style: GoogleFonts.jetBrainsMono(
-                                            fontSize: 10,
-                                            color: const Color(0xFF9e8f78),
-                                            letterSpacing: 1.0,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '₹',
+                                        Text('TOTAL PAYABLE', style: GoogleFonts.jetBrainsMono(fontSize: 10, color: const Color(0xFF9e8f78), letterSpacing: 1.0, ), ), const SizedBox(height: 4), Text('₹${totalIOwe.abs().toStringAsFixed(0)}',
                                           style: GoogleFonts.jetBrainsMono(
                                             color: const Color(0xFFffb4ab),
                                             fontWeight: FontWeight.bold,
@@ -565,7 +540,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       color: const Color(0xFF201f20),
                                       alignment: Alignment.center,
                                       child: Text(
-                                        name.substring(0, 1),
+                                        (name.isNotEmpty ? name.substring(0, 1) : '?'),
                                         style: GoogleFonts.jetBrainsMono(
                                           fontSize: 20,
                                           color: const Color(0xFFe5e2e3),

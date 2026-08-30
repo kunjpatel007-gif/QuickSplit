@@ -171,7 +171,7 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text('HASH', style: GoogleFonts.jetBrainsMono(color: const Color(0xFF514532), fontSize: 10)),
-                                  Text(log.currentHash.substring(0, 8), style: GoogleFonts.jetBrainsMono(color: const Color(0xFFb8c3ff), fontWeight: FontWeight.bold)),
+                                  Text((log.currentHash.length >= 8 ? log.currentHash.substring(0, 8) : log.currentHash), style: GoogleFonts.jetBrainsMono(color: const Color(0xFFb8c3ff), fontWeight: FontWeight.bold)),
                                 ],
                               ),
                             ],

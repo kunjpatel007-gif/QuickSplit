@@ -17,6 +17,6 @@ class CurrencyFormatter {
   }
 
   static double roundToTwoDecimals(double value) {
-    return (value * 100).truncateToDouble() / 100;
+    return (value * 100).roundToDouble() / 100;
   }
 }

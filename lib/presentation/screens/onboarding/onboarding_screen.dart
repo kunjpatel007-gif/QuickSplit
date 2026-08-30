@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:campus_quicksplit/domain/providers/providers.dart';
 import 'package:campus_quicksplit/data/repositories/repositories.dart';
-import 'package:campus_quicksplit/data/models/models.dart';
 import 'package:campus_quicksplit/core/theme/app_spacing.dart';
 
 class OnboardingScreen extends StatefulWidget {

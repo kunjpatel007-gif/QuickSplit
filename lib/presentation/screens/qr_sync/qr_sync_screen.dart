@@ -515,15 +515,14 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
                 final xFile = await picker.pickImage(source: ImageSource.gallery);
                 if (xFile != null) {
                   final capture = await _scannerController?.analyzeImage(xFile.path);
+                  if (!mounted) return;
                   if (capture != null && capture.barcodes.isNotEmpty) {
                     final val = capture.barcodes.first.rawValue;
                     if (val != null) _processScannedData(val);
                   } else {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('No QR code found in the image.')),
-                      );
-                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No QR code found in the image.')),
+                    );
                   }
                 }
               },

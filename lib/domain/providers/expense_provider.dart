@@ -32,13 +32,16 @@ class ExpenseProvider extends ChangeNotifier {
     _currentOffset = 0;
     notifyListeners();
 
-    _expenses = await _expenseRepository.getAllActiveExpenses(
-      limit: AppConstants.defaultPageSize,
-      offset: _currentOffset,
-    );
-    _hasMore = _expenses.length == AppConstants.defaultPageSize;
-    _isLoading = false;
-    notifyListeners();
+    try {
+      _expenses = await _expenseRepository.getAllActiveExpenses(
+        limit: AppConstants.defaultPageSize,
+        offset: _currentOffset,
+      );
+      _hasMore = _expenses.length == AppConstants.defaultPageSize;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> loadMoreExpenses() async {
@@ -48,15 +51,18 @@ class ExpenseProvider extends ChangeNotifier {
     _currentOffset += AppConstants.defaultPageSize;
     notifyListeners();
 
-    final newExpenses = await _expenseRepository.getAllActiveExpenses(
-      limit: AppConstants.defaultPageSize,
-      offset: _currentOffset,
-    );
+    try {
+      final newExpenses = await _expenseRepository.getAllActiveExpenses(
+        limit: AppConstants.defaultPageSize,
+        offset: _currentOffset,
+      );
 
-    _expenses = List.from(_expenses)..addAll(newExpenses);
-    _hasMore = newExpenses.length == AppConstants.defaultPageSize;
-    _isLoading = false;
-    notifyListeners();
+      _expenses = List.from(_expenses)..addAll(newExpenses);
+      _hasMore = newExpenses.length == AppConstants.defaultPageSize;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<int> addExpense({

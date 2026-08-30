@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
@@ -10,6 +9,7 @@ import 'package:campus_quicksplit/domain/providers/providers.dart';
 import 'package:campus_quicksplit/domain/services/services.dart';
 import 'package:campus_quicksplit/app.dart';
 import 'package:campus_quicksplit/data/models/models.dart';
+import 'package:campus_quicksplit/core/platform/platform_info.dart';
 
 // ---------------------------------------------------------------------------
 // GHOST SUBSCRIPTIONS — background task identifiers
@@ -87,7 +87,26 @@ Future<List<Expense>> _duplicateDueRecurringExpenses(ExpenseRepository expenseRe
         isRecurring: true,
         isDeleted: false,
       );
-      await expenseRepo.insertExpense(duplicated);
+      final newId = await expenseRepo.insertExpense(duplicated);
+      
+      if (expense.id != null) {
+        final payers = await expenseRepo.getPayersForExpense(expense.id!);
+        for (final p in payers) {
+          await expenseRepo.insertExpensePayer(ExpensePayer(
+            expenseId: newId,
+            userId: p.userId,
+            amountPaid: p.amountPaid,
+          ));
+        }
+        final splits = await expenseRepo.getSplitsForExpense(expense.id!);
+        for (final s in splits) {
+          await expenseRepo.insertExpenseSplit(ExpenseSplit(
+            expenseId: newId,
+            userId: s.userId,
+            amountOwed: s.amountOwed,
+          ));
+        }
+      }
       inserted.add(duplicated);
     }
   }
@@ -138,20 +157,22 @@ void main() async {
   // Android enforces a minimum periodic interval of 15 minutes; we use
   // 12 hours since this only needs to catch a monthly rollover.
   // ---------------------------------------------------------------------
-  await Workmanager().initialize(
-    callbackDispatcher,
-    isInDebugMode: false,
-  );
-  await Workmanager().registerPeriodicTask(
-    kRecurringExpenseUniqueId,
-    kRecurringExpenseTaskName,
-    frequency: const Duration(hours: 12),
-    constraints: Constraints(
-      networkType: NetworkType.notRequired,
-      requiresBatteryNotLow: true,
-    ),
-    existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
-  );
+  if (PlatformInfo.supportsBackgroundTasks) {
+    await Workmanager().initialize(
+      callbackDispatcher,
+      isInDebugMode: false,
+    );
+    await Workmanager().registerPeriodicTask(
+      kRecurringExpenseUniqueId,
+      kRecurringExpenseTaskName,
+      frequency: const Duration(hours: 12),
+      constraints: Constraints(
+        networkType: NetworkType.notRequired,
+        requiresBatteryNotLow: true,
+      ),
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+    );
+  }
 
   runApp(
     MultiProvider(

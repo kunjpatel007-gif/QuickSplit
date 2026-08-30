@@ -69,6 +69,8 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
       final inputImage = InputImage.fromFilePath(pickedFile.path);
       final recognizedText = await _textRecognizer!.processImage(inputImage);
       
+      if (!mounted) return;
+      
       // Reconstruct text horizontally using bounding boxes
       // ML Kit often reads column-by-column (all names, then all prices).
       // We group them by Y-coordinate overlap to reconstruct the original rows.
@@ -480,7 +482,7 @@ class _ReceiptScannerScreenState extends State<ReceiptScannerScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircleAvatar(child: Text(user.name[0])),
+                        CircleAvatar(child: Text((user.name.isNotEmpty ? user.name[0] : '?'))),
                         const SizedBox(height: AppSpacing.sm),
                         Text(
                           user.name,

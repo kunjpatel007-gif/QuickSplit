@@ -8,7 +8,6 @@ import 'package:campus_quicksplit/core/constants/app_constants.dart';
 import 'package:campus_quicksplit/core/constants/category_icons.dart';
 import 'package:campus_quicksplit/core/utils/currency_formatter.dart';
 import 'package:campus_quicksplit/core/utils/input_validators.dart';
-import 'package:campus_quicksplit/core/theme/app_spacing.dart';
 import 'package:campus_quicksplit/presentation/widgets/widgets.dart';
 import 'package:campus_quicksplit/core/utils/template_utils.dart';
 
@@ -163,6 +162,7 @@ class _AddPresetFormState extends State<_AddPresetForm> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final currentUser = context.read<UserProvider>().currentUser;
       if (currentUser != null && currentUser.id != null) {
         setState(() {

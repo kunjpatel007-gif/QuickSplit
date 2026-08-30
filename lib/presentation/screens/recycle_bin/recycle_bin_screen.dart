@@ -6,7 +6,6 @@ import 'package:campus_quicksplit/domain/providers/providers.dart';
 import 'package:campus_quicksplit/presentation/widgets/widgets.dart';
 import 'package:campus_quicksplit/core/utils/currency_formatter.dart';
 import 'package:campus_quicksplit/core/utils/date_formatter.dart';
-import 'package:campus_quicksplit/core/theme/app_spacing.dart';
 
 class RecycleBinScreen extends StatefulWidget {
   const RecycleBinScreen({super.key});

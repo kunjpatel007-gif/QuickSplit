@@ -247,7 +247,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
                 width: 32, height: 32,
                 color: const Color(0xFF131314),
                 alignment: Alignment.center,
-                child: Text(user.name.substring(0, 1).toUpperCase(), style: GoogleFonts.jetBrainsMono(color: const Color(0xFFe5e2e3), fontWeight: FontWeight.bold)),
+                child: Text((user.name.isNotEmpty ? user.name.substring(0, 1).toUpperCase() : '?'), style: GoogleFonts.jetBrainsMono(color: const Color(0xFFe5e2e3), fontWeight: FontWeight.bold)),
               ),
               const SizedBox(width: 12),
               Expanded(child: Text(user.name.toUpperCase(), style: GoogleFonts.jetBrainsMono(color: const Color(0xFFe5e2e3), fontWeight: FontWeight.bold))),

@@ -46,6 +46,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     _nlpController.addListener(_onNlpChanged);
 
     Future.microtask(() {
+      if (!mounted) return;
       final userProvider = context.read<UserProvider>();
       final users = userProvider.users;
       setState(() {
@@ -452,7 +453,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 3),
                               child: Row(
                                 children: [
-                                  CircleAvatar(radius: 14, child: Text(user.name[0], style: const TextStyle(fontSize: 11))),
+                                  CircleAvatar(radius: 14, child: Text((user.name.isNotEmpty ? user.name[0] : '?'), style: const TextStyle(fontSize: 11))),
                                   const SizedBox(width: AppSpacing.sm),
                                   Expanded(child: Text(user.name, style: tt.bodyMedium)),
                                   Column(
@@ -707,7 +708,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             final userTax = selectedUsers.isEmpty ? 0.0 : tax / selectedUsers.length;
             
             return ListTile(
-              leading: CircleAvatar(child: Text(user.name[0])),
+              leading: CircleAvatar(child: Text((user.name.isNotEmpty ? user.name[0] : '?'))),
               title: Text(user.name),
               subtitle: tax > 0 
                 ? Text('+ ${CurrencyFormatter.format(userTax)} tax = ${CurrencyFormatter.format(perPerson)}', style: tt.bodySmall?.copyWith(color: cs.primary, fontSize: 11))
@@ -729,7 +730,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               child: Row(
                 children: [
                   CircleAvatar(
-                      radius: 16, child: Text(user.name[0])),
+                      radius: 16, child: Text((user.name.isNotEmpty ? user.name[0] : '?'))),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
@@ -768,7 +769,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               child: Row(
                 children: [
                   CircleAvatar(
-                      radius: 16, child: Text(user.name[0])),
+                      radius: 16, child: Text((user.name.isNotEmpty ? user.name[0] : '?'))),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(

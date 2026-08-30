@@ -5,7 +5,6 @@ import 'package:campus_quicksplit/data/models/models.dart';
 import 'package:campus_quicksplit/domain/providers/providers.dart';
 import 'package:campus_quicksplit/core/utils/input_validators.dart';
 import 'package:campus_quicksplit/presentation/widgets/widgets.dart';
-import 'package:campus_quicksplit/core/theme/app_spacing.dart';
 import 'package:intl/intl.dart';
 
 class ManageUsersScreen extends StatefulWidget {
