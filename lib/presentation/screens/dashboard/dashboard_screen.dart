@@ -196,13 +196,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final expenses = expenseProvider.expenses;
     final balances = balanceProvider.balances;
 
-    final double totalOwedToMe = balances.values
-        .where((b) => b > 0)
-        .fold(0.0, (a, b) => a + b);
-    final double totalIOwe = balances.values
-        .where((b) => b < 0)
-        .fold(0.0, (a, b) => a + b);
-    final double netLiquidity = totalOwedToMe + totalIOwe;
+    final currentUserId = userProvider.currentUser?.id ?? -1;
+    double totalOwedToMe = 0.0;
+    double totalIOwe = 0.0;
+
+    if (currentUserId != -1) {
+      final transactions = DebtSimplifier().simplifyDebts(balances);
+      for (var tx in transactions) {
+        if (tx.fromUserId == currentUserId) {
+          totalIOwe += tx.amount;
+        } else if (tx.toUserId == currentUserId) {
+          totalOwedToMe += tx.amount;
+        }
+      }
+    }
+    final double netLiquidity = totalOwedToMe - totalIOwe;
 
     return RefreshIndicator(
       onRefresh: _loadData,
