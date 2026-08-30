@@ -63,6 +63,7 @@ The app is built with Flutter and uses a brutalist dark-mode UI.
 ### 4. NFC Tap-to-Sync (HCE)
 * **Host Card Emulation:** Uses the `nfc_manager` package to emulate a smart card.
 * **Instant Pairing:** Instead of scanning QR codes to join a group, you just tap two Android phones together. The app broadcasts the QuickSplit User Profile via NFC, instantly adding them to your local database.
+* **Instant Payments:** When settling a debt, tapping phones can also automatically extract the payee's UPI ID and instantly launch your UPI app (like GPay) with the payment ready to go.
 
 ### 5. ML-Powered Receipt Scanning
 * **On-Device OCR:** Uses Google ML Kit Vision to read text directly from the camera feed. No images are sent to the cloud.
@@ -117,3 +118,4 @@ QuickSplit is completely offline. Your SQLite database stays on your phone. Data
 
 ## License
 [MIT License](LICENSE)
+
