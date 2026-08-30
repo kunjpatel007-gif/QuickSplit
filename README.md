@@ -1,7 +1,6 @@
 # QuickSplit
 
-> **[🚀 Download the latest Android APK here!](https://github.com/kunjpatel007-gif/QuickSplit/actions/workflows/build_apk.yml)**  
-> *(Click the most recent successful run, scroll to the bottom, and download the `release-apks` zip file)*
+**Want to try it out?** [Download the latest APK](https://github.com/kunjpatel007-gif/QuickSplit/actions/workflows/build_apk.yml) (just click the newest green run and grab the `release-apks` zip at the bottom).
 
 
 QuickSplit is an offline-first expense splitting app built for college campuses and friend groups. It handles shared expenses, peer-to-peer ledger syncing, and UPI settlements entirely on-device without needing a backend server.
@@ -28,21 +27,24 @@ The app is built with Flutter and uses a brutalist dark-mode UI.
 
 ## Screenshots
 
-<!-- Add your screenshots below replacing the placeholder image links -->
 <div align="center">
-  <img src="https://via.placeholder.com/250x500.png?text=Main+Dashboard" width="200" alt="Main Dashboard (Net Balance)"/>
+  <img src="screenshots/Screenshot_20260830_180319.jpg" width="200"/>
   &nbsp;&nbsp;&nbsp;
-  <img src="https://via.placeholder.com/250x500.png?text=Add+Expense" width="200" alt="Add Expense & Receipt Scanner"/>
+  <img src="screenshots/Screenshot_20260830_180331.jpg" width="200"/>
   &nbsp;&nbsp;&nbsp;
-  <img src="https://via.placeholder.com/250x500.png?text=Settlements" width="200" alt="Settlements Tab (UPI Payments)"/>
+  <img src="screenshots/Screenshot_20260830_180338.jpg" width="200"/>
 </div>
 <br>
 <div align="center">
-  <img src="https://via.placeholder.com/250x500.png?text=Nearby+Sync" width="200" alt="Nearby Sync (Peer-to-Peer)"/>
+  <img src="screenshots/Screenshot_20260830_180343.jpg" width="200"/>
   &nbsp;&nbsp;&nbsp;
-  <img src="https://via.placeholder.com/250x500.png?text=Analytics" width="200" alt="Analytics & Debt Graph"/>
+  <img src="screenshots/Screenshot_20260830_180348.jpg" width="200"/>
   &nbsp;&nbsp;&nbsp;
-  <img src="https://via.placeholder.com/250x500.png?text=Audit+Log" width="200" alt="Audit Log"/>
+  <img src="screenshots/Screenshot_20260830_180355.jpg" width="200"/>
+</div>
+<br>
+<div align="center">
+  <img src="screenshots/Screenshot_20260830_180401.jpg" width="200"/>
 </div>
 
 ---
