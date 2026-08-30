@@ -100,13 +100,19 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                           IconButton(
                             icon: Icon(Icons.restore, color: cs.primary),
                             onPressed: () async {
-                              await context
-                                  .read<ExpenseProvider>()
-                                  .restoreExpense(expense.id!);
-                              await context
-                                  .read<BalanceProvider>()
-                                  .recalculateBalances();
-                              await _loadDeleted();
+                              try {
+                                final expProv = context.read<ExpenseProvider>();
+                                final balProv = context.read<BalanceProvider>();
+                                await expProv.restoreExpense(expense.id!);
+                                await balProv.recalculateBalances();
+                                await _loadDeleted();
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error restoring: $e')),
+                                  );
+                                }
+                              }
                             },
                           ),
                           IconButton(

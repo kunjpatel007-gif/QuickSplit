@@ -70,10 +70,7 @@ class ExpenseProvider extends ChangeNotifier {
     required List<ExpensePayer> payers,
     required List<ExpenseSplit> splits,
   }) async {
-    final exists = await _expenseRepository.doesExpenseTitleExist(expense.title);
-    if (exists) {
-      return -1; // Duplicate title, skip silently
-    }
+    // Removed strict duplicate title check to allow multiple expenses with the same name (e.g. "Lunch")
 
     final expenseId = await _expenseRepository.insertExpense(expense);
 

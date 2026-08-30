@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:nearby_connections/nearby_connections.dart';
@@ -262,7 +263,8 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
       'expenses': expensesJson,
     };
 
-    final bytes = utf8.encode(jsonEncode(payload));
+    final rawBytes = utf8.encode(jsonEncode(payload));
+    final bytes = gzip.encode(rawBytes);
     await Nearby().sendBytesPayload(endpointId, bytes);
 
     if (mounted) {
@@ -336,7 +338,13 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
 
   Future<void> _handleIncomingPayload(List<int> bytes) async {
     try {
-      final map = jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
+      List<int> decodedBytes;
+      try {
+        decodedBytes = gzip.decode(bytes);
+      } catch (_) {
+        decodedBytes = bytes; // Fallback to raw if not compressed
+      }
+      final map = jsonDecode(utf8.decode(decodedBytes)) as Map<String, dynamic>;
       final type = map['type'] as String?;
 
       if (type == 'profile') {
@@ -354,7 +362,7 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _status = 'Sync complete — skipped duplicates.';
+          _status = 'Sync failed: $e';
         });
       }
     }
@@ -464,8 +472,12 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
       final payers = await _resolvePayersFromJson(m['payers'], userRepo, userProvider);
       final splits = await _resolveSplitsFromJson(m['splits'], userRepo, userProvider);
 
-      await expenseProvider.addExpense(expense: expense, payers: payers, splits: splits);
-      added++;
+      final res = await expenseProvider.addExpense(expense: expense, payers: payers, splits: splits);
+      if (res == -1) {
+        skipped++;
+      } else {
+        added++;
+      }
 
       if (mounted) setState(() => _status = 'Importing… ($added imported, $skipped skipped)');
     }
