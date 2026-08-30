@@ -1,5 +1,9 @@
 # QuickSplit
 
+> **[🚀 Download the latest Android APK here!](https://github.com/kunjpatel007-gif/QuickSplit/actions/workflows/build_apk.yml)**  
+> *(Click the most recent successful run, scroll to the bottom, and download the `release-apks` zip file)*
+
+
 QuickSplit is an offline-first expense splitting app built for college campuses and friend groups. It handles shared expenses, peer-to-peer ledger syncing, and UPI settlements entirely on-device without needing a backend server.
 
 The app is built with Flutter and uses a brutalist dark-mode UI.
