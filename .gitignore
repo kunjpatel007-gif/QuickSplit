@@ -48,3 +48,4 @@ codebase_review.md
 # Test files
 integration_test/
 lib/core/utils/test_data_seeder.dart
+apks/

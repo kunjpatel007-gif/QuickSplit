@@ -9,42 +9,53 @@ import 'package:campus_quicksplit/domain/providers/balance_provider.dart';
 class TemplateUtils {
   /// Applies a template, creates an expense, and logs it into the database.
   static Future<void> applyTemplate(BuildContext context, ExpenseTemplate template) async {
-    final expense = Expense(
-      title: template.title,
-      totalAmount: template.amount,
-      category: template.category,
-      timestamp: DateTime.now(),
-      isRecurring: false,
-      isDeleted: false,
-    );
+    try {
+      final expense = Expense(
+        title: template.title,
+        totalAmount: template.amount,
+        category: template.category,
+        timestamp: DateTime.now(),
+        isRecurring: false,
+        isDeleted: false,
+      );
 
-    final List<dynamic> parsedPayers = jsonDecode(template.payersJson);
-    final List<dynamic> parsedSplits = jsonDecode(template.splitsJson);
+      final List<dynamic> parsedPayers = jsonDecode(template.payersJson);
+      final List<dynamic> parsedSplits = jsonDecode(template.splitsJson);
 
-    final payers = parsedPayers.map((e) => ExpensePayer(
-      expenseId: 0,
-      userId: e['userId'] as int,
-      amountPaid: (e['amountPaid'] as num).toDouble(),
-    )).toList();
+      final userProv = context.read<UserProvider>();
+      int currentUserId = userProv.currentUser?.id ?? 0;
+      if (currentUserId == 0 && userProv.users.isNotEmpty) {
+        currentUserId = userProv.users.first.id ?? 1;
+      }
+      if (currentUserId == 0) {
+        currentUserId = 1; // Fallback
+      }
 
-    final splits = parsedSplits.map((e) => ExpenseSplit(
-      expenseId: 0,
-      userId: e['userId'] as int,
-      amountOwed: (e['amountOwed'] as num).toDouble(),
-    )).toList();
+      final payers = parsedPayers.map((e) => ExpensePayer(
+        expenseId: 0,
+        userId: (e['userId'] as num?)?.toInt() ?? currentUserId,
+        amountPaid: (e['amountPaid'] as num).toDouble(),
+      )).toList();
 
-    final userProv = context.read<UserProvider>();
-    final currentUserId = userProv.currentUser?.id ?? 0;
+      final splits = parsedSplits.map((e) => ExpenseSplit(
+        expenseId: 0,
+        userId: (e['userId'] as num?)?.toInt() ?? currentUserId,
+        amountOwed: (e['amountOwed'] as num).toDouble(),
+      )).toList();
 
-    await context.read<ExpenseProvider>().addExpense(
-      expense: expense,
-      payers: payers.isEmpty
-          ? [ExpensePayer(expenseId: 0, userId: currentUserId, amountPaid: template.amount)]
-          : payers,
-      splits: splits.isEmpty
-          ? [ExpenseSplit(expenseId: 0, userId: currentUserId, amountOwed: template.amount)]
-          : splits,
-    );
-    await context.read<BalanceProvider>().recalculateBalances();
+      await context.read<ExpenseProvider>().addExpense(
+        expense: expense,
+        payers: payers.isEmpty
+            ? [ExpensePayer(expenseId: 0, userId: currentUserId, amountPaid: template.amount)]
+            : payers,
+        splits: splits.isEmpty
+            ? [ExpenseSplit(expenseId: 0, userId: currentUserId, amountOwed: template.amount)]
+            : splits,
+      );
+      await context.read<BalanceProvider>().recalculateBalances();
+    } catch (e) {
+      debugPrint("TemplateUtils Error: $e");
+      rethrow;
+    }
   }
 }
