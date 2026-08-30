@@ -430,6 +430,37 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
           phoneNumber: m['phoneNumber'] as String?,
           createdAt: DateTime.now(),
         ));
+        } else {
+          bool needsUpdate = false;
+          String? newUpi = existing.upiId;
+          String? newPhone = existing.phoneNumber;
+          String newSyncId = existing.syncId;
+
+          final inUpi = m['upiId'] as String?;
+          if (inUpi != null && inUpi.isNotEmpty && (existing.upiId == null || existing.upiId!.isEmpty)) {
+            newUpi = inUpi;
+            needsUpdate = true;
+          }
+
+          final inPhone = m['phoneNumber'] as String?;
+          if (inPhone != null && inPhone.isNotEmpty && (existing.phoneNumber == null || existing.phoneNumber!.isEmpty)) {
+            newPhone = inPhone;
+            needsUpdate = true;
+          }
+
+          if (syncId != null && syncId.isNotEmpty && (existing.syncId.isEmpty)) {
+            newSyncId = syncId;
+            needsUpdate = true;
+          }
+
+          if (needsUpdate) {
+            await userProvider.updateUser(existing.copyWith(
+              upiId: newUpi,
+              phoneNumber: newPhone,
+              syncId: newSyncId,
+            ));
+          }
+        }
       }
     }
     if (mounted) await userProvider.loadUsers();
@@ -713,3 +744,4 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
     );
   }
 }
+
