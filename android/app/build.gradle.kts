@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.campusquicksplit.campus_quicksplit"
-    compileSdk = 35
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
