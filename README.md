@@ -43,7 +43,69 @@ The app is built with Flutter and uses a brutalist dark-mode UI.
 
 ---
 
+
+## Tech Stack & Libraries
+* **Framework:** Flutter (Dart)
+* **Database:** SQLite (`sqflite`)
+* **State Management:** `provider`
+* **Peer-to-Peer:** Google Nearby Connections (`nearby_connections`)
+* **NFC / HCE:** `nfc_manager`
+* **OCR & Vision:** Google ML Kit (`google_mlkit_text_recognition`)
+* **Cryptography:** `crypto` (SHA-256 for Audit Log)
+* **Deep Linking:** `url_launcher` (UPI and WhatsApp intents)
+* **UI & Theming:** Material 3 (Brutalist Dark Theme)
+
+---
+
 ## How It Works (Technical Breakdown)
+
+### Data Flow & Architecture Diagram
+
+```mermaid
+graph TD
+    subgraph UI Layer
+        A[Dashboard Screen]
+        B[Add Expense Screen]
+        C[Settlement Screen]
+    end
+
+    subgraph Logic & State Layer
+        D[Provider State]
+        E[Debt Simplifier Engine]
+        F[ML Kit OCR Engine]
+    end
+
+    subgraph Data Layer
+        G[(Local SQLite Database)]
+        H[SHA-256 Audit Chain]
+    end
+
+    subgraph External & Peer-to-Peer
+        I[Nearby Connections API]
+        J[NFC / HCE Host Card]
+        K[UPI Intents / WhatsApp]
+    end
+
+    B -- Manual Entry --> D
+    B -- Camera Feed --> F
+    F -- Parsed Text --> D
+    D -- Write Data --> G
+    D -- Hash Log --> H
+
+    G -- Read Data --> E
+    E -- Calculate Nets --> A
+    E -- Calculate Settlements --> C
+
+    C -- trigger intent --> K
+
+    G <--> I
+    I -- GZip Sync --> G
+    
+    C <--> J
+    J -- Tap to Sync Profile --> G
+```
+
+
 
 ### 1. Offline-First Architecture
 * **Database:** Uses `sqflite` for a local SQLite database. Everything is saved to the device first.
@@ -91,7 +153,7 @@ The app is built with Flutter and uses a brutalist dark-mode UI.
 * Flutter SDK (3.24+)
 * Android SDK 35+
 
-### Installation
+### Running the App from Source
 1. Clone the repository:
    ```bash
    git clone https://github.com/kunjpatel007-gif/QuickSplit.git
@@ -100,17 +162,23 @@ The app is built with Flutter and uses a brutalist dark-mode UI.
    ```bash
    flutter pub get
    ```
-3. Run the app:
+3. Run the app locally on a connected emulator or phone:
    ```bash
    flutter run
    ```
 
-### Building for Release
-We have a GitHub Actions workflow that automatically builds split APKs whenever you push to `main`. 
+### Building and Installing APKs
+We have a GitHub Actions workflow that automatically builds split APKs whenever you push to `main`. You can download the latest APKs from the Actions tab.
 
-To build a release APK locally:
+To manually build a release APK locally, run:
 ```bash
 flutter build apk --split-per-abi --release
+```
+This generates ultra-optimized ARM APKs in your `build/app/outputs/flutter-apk/` directory.
+
+To install the newly built APK onto a connected Android phone without erasing the local SQLite database, use adb:
+```bash
+adb install -r build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
 ```
 
 ## Privacy
