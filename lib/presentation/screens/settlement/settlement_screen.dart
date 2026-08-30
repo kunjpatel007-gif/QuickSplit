@@ -106,7 +106,7 @@ class _SettlementScreenState extends State<SettlementScreen> {
                                 color: const Color(0xFFffb800),
                                 onTap: () => _handleUpiPayment(toUser, tx.amount),
                               ),
-                            if ((Platform.isAndroid || Platform.isIOS) && amIPaying && (toUser.upiId == null || toUser.upiId!.isEmpty))
+                            if ((Platform.isAndroid || Platform.isIOS) && amIPaying)
                               _buildActionBtn(
                                 icon: Icons.qr_code_scanner,
                                 label: 'SCAN GPAY QR',
