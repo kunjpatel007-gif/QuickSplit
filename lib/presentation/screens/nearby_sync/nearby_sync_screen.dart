@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:nearby_connections/nearby_connections.dart';
@@ -264,7 +265,7 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
     };
 
     final rawBytes = utf8.encode(jsonEncode(payload));
-    final bytes = gzip.encode(rawBytes);
+    final bytes = Uint8List.fromList(gzip.encode(rawBytes));
     await Nearby().sendBytesPayload(endpointId, bytes);
 
     if (mounted) {
@@ -325,7 +326,7 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
       'splits': splitsJson,
     };
 
-    await Nearby().sendBytesPayload(endpointId, utf8.encode(jsonEncode(payload)));
+    await Nearby().sendBytesPayload(endpointId, Uint8List.fromList(utf8.encode(jsonEncode(payload))));
     if (mounted) {
       setState(() {
         _isSending = false;
