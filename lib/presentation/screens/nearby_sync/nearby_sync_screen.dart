@@ -462,8 +462,7 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
           }
         }
       }
-    }
-    if (mounted) await userProvider.loadUsers();
+      if (mounted) await userProvider.loadUsers();
 
     // 2. Import each expense
     final expenses = map['expenses'] as List<dynamic>? ?? [];
