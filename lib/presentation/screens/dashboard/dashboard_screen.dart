@@ -452,7 +452,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     Text(name, style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFFe5e2e3)), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     const SizedBox(height: 4),
                                     Text(
-                                      balance >= 0 ? '+₹' : '-₹',
+                                      balance >= 0 ? '+₹${balance.toStringAsFixed(0)}' : '-₹${balance.abs().toStringAsFixed(0)}',
                                       style: GoogleFonts.jetBrainsMono(
                                         fontSize: 12,
                                         color: balance >= 0 ? const Color(0xFFffdca1) : const Color(0xFFffb4ab),
@@ -468,10 +468,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                   // Recent Transactions (Expenses)
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.list_alt, color: Color(0xFF9e8f78), size: 16),
-                      const SizedBox(width: 8),
-                      Text('RECENT TRANSACTIONS', style: GoogleFonts.jetBrainsMono(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF9e8f78), letterSpacing: 1.5)),
+                      Row(
+                        children: [
+                          const Icon(Icons.list_alt, color: Color(0xFF9e8f78), size: 16),
+                          const SizedBox(width: 8),
+                          Text('RECENT TRANSACTIONS', style: GoogleFonts.jetBrainsMono(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF9e8f78), letterSpacing: 1.5)),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Color(0xFF9e8f78)),
+                        onPressed: () {
+                           Navigator.push(context, MaterialPageRoute(builder: (_) => const RecycleBinScreen()));
+                        }
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
