@@ -281,10 +281,10 @@ class _SettlementScreenState extends State<SettlementScreen> {
     if (result != null && mounted) {
       final txLabel = result.isNotEmpty ? ' (TXN: $result)' : '';
 
-      // === MATH FIX: Create a real "Settlement" expense to zero out the debt ===
-      // fromUser paid toUser the settlement amount.
-      // We model this as: fromUser paid `amount`, and toUser owes `amount`.
-      // This perfectly cancels out the original debt in the balance calculation.
+
+
+
+
       final settlementExpense = Expense(
         title: 'Settlement: ${fromUser.name} → ${toUser.name}$txLabel',
         totalAmount: amount,
