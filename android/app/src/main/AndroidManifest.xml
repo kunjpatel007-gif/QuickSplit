@@ -27,7 +27,7 @@
     <uses-feature android:name="android.hardware.nfc.hce" android:required="true" />
 
     <application
-        android:label="campus_quicksplit"
+        android:label="QuickSplit"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
         android:allowBackup="false"
