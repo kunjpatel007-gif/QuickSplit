@@ -62,9 +62,29 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
         ),
       ),
       body: expenses.isEmpty
-          ? Center(child: Text('NO DATA', style: GoogleFonts.jetBrainsMono(color: const Color(0xFF514532))))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+          ? RefreshIndicator(
+              onRefresh: () async {
+                await context.read<ExpenseProvider>().loadExpenses();
+                await context.read<BalanceProvider>().loadBalances();
+              },
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    child: Center(child: Text('NO DATA', style: GoogleFonts.jetBrainsMono(color: const Color(0xFF514532))))
+                  )
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: () async {
+                await context.read<ExpenseProvider>().loadExpenses();
+                await context.read<BalanceProvider>().loadBalances();
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

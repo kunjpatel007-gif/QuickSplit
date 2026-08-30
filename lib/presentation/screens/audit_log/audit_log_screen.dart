@@ -122,8 +122,17 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
           : RefreshIndicator(
               onRefresh: _loadLogs,
               child: _logs.isEmpty
-                  ? Center(child: Text('NO AUDIT RECORDS FOUND', style: GoogleFonts.jetBrainsMono(color: const Color(0xFF514532))))
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.6,
+                          child: Center(child: Text('NO AUDIT RECORDS FOUND', style: GoogleFonts.jetBrainsMono(color: const Color(0xFF514532))))
+                        )
+                      ],
+                    )
                   : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 80),
                       itemCount: _logs.length,
                       itemBuilder: (context, index) {
