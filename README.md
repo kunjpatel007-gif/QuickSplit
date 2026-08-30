@@ -78,7 +78,7 @@ The app is built with Flutter and uses a brutalist dark-mode UI.
 * **Live Queries:** Charts are drawn natively on the GPU by running direct queries against the local SQLite ledger to get category totals and 7-day rolling averages.
 
 ### 8. Audit Log
-* **Transparency:** Since there's no central server, we added an append-only log table to the database. Every time an expense is added, deleted, or settled, it records a permanent timestamped entry so groups can track exactly who changed what.
+* **Blockchain-Style Verification:** Since there's no central server, we added a tamper-evident append-only log. Every expense creation, edit, or settlement is cryptographically chained using **SHA-256** hashing. Each entry references the previous hash (tracing all the way back to the Genesis block), making it mathematically impossible for any peer to silently rewrite financial history without breaking the chain.
 
 ### 9. WhatsApp Nudge
 * **Quick Reminders:** If someone owes you money, tapping "Nudge" triggers a WhatsApp URL intent (`wa.me`) that opens their chat with a pre-typed reminder message.
@@ -118,4 +118,5 @@ QuickSplit is completely offline. Your SQLite database stays on your phone. Data
 
 ## License
 [MIT License](LICENSE)
+
 
