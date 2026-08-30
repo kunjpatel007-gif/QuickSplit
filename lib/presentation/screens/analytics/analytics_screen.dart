@@ -65,7 +65,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
           ? RefreshIndicator(
               onRefresh: () async {
                 await context.read<ExpenseProvider>().loadExpenses();
-                await context.read<BalanceProvider>().loadBalances();
+                await context.read<BalanceProvider>().recalculateBalances();
               },
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -80,7 +80,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
           : RefreshIndicator(
               onRefresh: () async {
                 await context.read<ExpenseProvider>().loadExpenses();
-                await context.read<BalanceProvider>().loadBalances();
+                await context.read<BalanceProvider>().recalculateBalances();
               },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -182,6 +182,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
                 ],
               ),
             ),
+            ), // Close RefreshIndicator
     );
   }
 
