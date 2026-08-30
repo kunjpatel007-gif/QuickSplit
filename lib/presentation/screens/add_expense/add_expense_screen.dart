@@ -298,11 +298,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final balanceProvider = context.read<BalanceProvider>();
 
     try {
-      await expenseProvider.addExpense(
+      final result = await expenseProvider.addExpense(
             expense: expense,
             payers: payers,
             splits: splits,
           );
+      if (result == -1) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('An expense with the title "${expense.title}" already exists. Please use a unique name.')),
+          );
+        }
+        return;
+      }
       await balanceProvider.recalculateBalances();
       if (mounted) Navigator.pop(context);
     } catch (e) {

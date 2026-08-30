@@ -107,17 +107,26 @@ class _PresetsScreenState extends State<PresetsScreen> {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        TextButton(
-                          onPressed: () => _useTemplate(template),
-                          child: const Text('Use'),
+                        SizedBox(
+                          width: 50,
+                          child: TextButton(
+                            style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                            onPressed: () => _useTemplate(template),
+                            child: const Text('Use'),
+                          ),
                         ),
-                        IconButton(
-                          icon: Icon(Icons.delete, color: cs.error),
-                          onPressed: () {
-                            if (template.id != null) {
-                              provider.deleteTemplate(template.id!);
-                            }
-                          },
+                        SizedBox(
+                          width: 36,
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            icon: Icon(Icons.delete, color: cs.error, size: 20),
+                            onPressed: () {
+                              if (template.id != null) {
+                                provider.deleteTemplate(template.id!);
+                              }
+                            },
+                          ),
                         ),
                       ],
                     ),

@@ -66,7 +66,7 @@ class ExpenseProvider extends ChangeNotifier {
   }) async {
     final exists = await _expenseRepository.doesExpenseTitleExist(expense.title);
     if (exists) {
-      throw Exception('An expense with the title "${expense.title}" already exists. Please use a unique name.');
+      return -1; // Duplicate title, skip silently
     }
 
     final expenseId = await _expenseRepository.insertExpense(expense);

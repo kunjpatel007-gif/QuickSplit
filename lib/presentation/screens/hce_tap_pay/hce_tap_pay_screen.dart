@@ -365,7 +365,7 @@ class _HceTapPayScreenState extends State<HceTapPayScreen>
                         Icon(Icons.check_circle, size: 48, color: theme.colorScheme.onSecondaryContainer),
                         const SizedBox(height: AppSpacing.md),
                         Text(
-                          'You\'re all settled with ${_peerUser!.name}! 🎉',
+                          'You\'re all settled with ${_peerUser!.name}!',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.titleLarge?.copyWith(
                             color: theme.colorScheme.onSecondaryContainer,
@@ -390,17 +390,27 @@ class _HceTapPayScreenState extends State<HceTapPayScreen>
               
               if (_isHceAvailable && _mode == HceMode.none) ...[
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    FilledButton.icon(
-                      onPressed: _startPaying,
-                      icon: const Icon(Icons.payment),
-                      label: const Text('I am Paying'),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: _startPaying,
+                        icon: const Icon(Icons.payment),
+                        label: const Text('I am Paying'),
+                      ),
                     ),
-                    FilledButton.tonalIcon(
-                      onPressed: _startReceiving,
-                      icon: const Icon(Icons.call_received),
-                      label: const Text('I am Receiving'),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.tonal(
+                        onPressed: _startReceiving,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.call_received),
+                            SizedBox(width: 8),
+                            Flexible(child: Text('I am Receiving', overflow: TextOverflow.ellipsis)),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),

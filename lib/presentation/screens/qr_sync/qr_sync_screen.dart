@@ -272,6 +272,8 @@ class _QrSyncScreenState extends State<QrSyncScreen> with SingleTickerProviderSt
     }
 
     if (importedCount > 0) {
+      await context.read<ExpenseProvider>().loadExpenses();
+      await context.read<UserProvider>().loadUsers();
       await context.read<BalanceProvider>().recalculateBalances();
     }
     

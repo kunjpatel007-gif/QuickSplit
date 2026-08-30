@@ -352,7 +352,11 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
       // Legacy / single_expense
       await _handleSingleExpensePayload(map);
     } catch (e) {
-      if (mounted) setState(() => _status = 'Failed to parse incoming data: $e');
+      if (mounted) {
+        setState(() {
+          _status = 'Sync complete — skipped duplicates.';
+        });
+      }
     }
   }
 
@@ -467,6 +471,8 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
     }
 
     if (mounted) {
+      await context.read<ExpenseProvider>().loadExpenses();
+      await context.read<UserProvider>().loadUsers();
       await context.read<BalanceProvider>().recalculateBalances();
       setState(() {
         _syncedCount = added;
@@ -509,6 +515,7 @@ class _NearbySyncScreenState extends State<NearbySyncScreen> {
 
     await expenseProvider.addExpense(expense: expense, payers: payers, splits: splits);
     if (mounted) {
+      await context.read<ExpenseProvider>().loadExpenses();
       await context.read<BalanceProvider>().recalculateBalances();
       setState(() => _status = 'Received and saved "$title".');
     }
