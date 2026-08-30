@@ -49,8 +49,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
     double totalSpending = 0;
     Map<String, double> categoryTotals = {};
     double highestAmount = 0;
+    List<double> dailyTotals = List.filled(7, 0.0);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
 
     for (var exp in expenses) {
+      if (exp.category == 'Settlement') continue;
+
+      final diff = today.difference(DateTime(exp.timestamp.year, exp.timestamp.month, exp.timestamp.day)).inDays;
+      bool inLast7Days = diff >= 0 && diff < 7;
+
       if (_showOnlyMe) {
         // Find how much the current user was split for this expense
         final mySplit = allSplits.firstWhere(
@@ -61,11 +69,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
             totalSpending += mySplit.amountOwed;
             categoryTotals[exp.category] = (categoryTotals[exp.category] ?? 0) + mySplit.amountOwed;
             if (mySplit.amountOwed > highestAmount) highestAmount = mySplit.amountOwed;
+            if (inLast7Days) dailyTotals[6 - diff] += mySplit.amountOwed;
         }
       } else {
         totalSpending += exp.totalAmount;
         categoryTotals[exp.category] = (categoryTotals[exp.category] ?? 0) + exp.totalAmount;
         if (exp.totalAmount > highestAmount) highestAmount = exp.totalAmount;
+        if (inLast7Days) dailyTotals[6 - diff] += exp.totalAmount;
       }
     }
 
@@ -219,7 +229,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
                         return CustomPaint(
                           size: Size.infinite,
                           painter: BrutalistBarChartPainter(
-                            expenses: expenses,
+                            dailyTotals: dailyTotals,
                             progress: _animation.value,
                           ),
                         );
@@ -381,28 +391,20 @@ class BrutalistDonutChartPainter extends CustomPainter {
 }
 
 class BrutalistBarChartPainter extends CustomPainter {
-  final List<Expense> expenses;
+  final List<double> dailyTotals;
   final double progress;
 
-  BrutalistBarChartPainter({required this.expenses, required this.progress});
+  BrutalistBarChartPainter({required this.dailyTotals, required this.progress});
 
   @override
   void paint(Canvas canvas, Size size) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    List<double> dailyTotals = List.filled(7, 0.0);
     List<String> dayLabels = List.filled(7, '');
 
     for (int i = 0; i < 7; i++) {
       final date = today.subtract(Duration(days: 6 - i));
       dayLabels[i] = '${date.day}/${date.month}';
-    }
-
-    for (var exp in expenses) {
-      final diff = today.difference(DateTime(exp.timestamp.year, exp.timestamp.month, exp.timestamp.day)).inDays;
-      if (diff >= 0 && diff < 7) {
-        dailyTotals[6 - diff] += exp.totalAmount;
-      }
     }
 
     double maxVal = dailyTotals.isEmpty ? 1 : dailyTotals.reduce(max);
