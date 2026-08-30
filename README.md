@@ -28,23 +28,23 @@ The app is built with Flutter and uses a brutalist dark-mode UI.
 ## Screenshots
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/kunjpatel007-gif/QuickSplit/main/screenshots/Screenshot_20260830_180319.jpg" width="200"/>
+  <img src="https://github.com/kunjpatel007-gif/QuickSplit/blob/main/screenshots/Screenshot_20260830_180319.jpg?raw=true" width="200"/>
   &nbsp;&nbsp;&nbsp;
-  <img src="https://raw.githubusercontent.com/kunjpatel007-gif/QuickSplit/main/screenshots/Screenshot_20260830_180331.jpg" width="200"/>
+  <img src="https://github.com/kunjpatel007-gif/QuickSplit/blob/main/screenshots/Screenshot_20260830_180331.jpg?raw=true" width="200"/>
   &nbsp;&nbsp;&nbsp;
-  <img src="https://raw.githubusercontent.com/kunjpatel007-gif/QuickSplit/main/screenshots/Screenshot_20260830_180338.jpg" width="200"/>
+  <img src="https://github.com/kunjpatel007-gif/QuickSplit/blob/main/screenshots/Screenshot_20260830_180338.jpg?raw=true" width="200"/>
 </div>
 <br>
 <div align="center">
-  <img src="https://raw.githubusercontent.com/kunjpatel007-gif/QuickSplit/main/screenshots/Screenshot_20260830_180343.jpg" width="200"/>
+  <img src="https://github.com/kunjpatel007-gif/QuickSplit/blob/main/screenshots/Screenshot_20260830_180343.jpg?raw=true" width="200"/>
   &nbsp;&nbsp;&nbsp;
-  <img src="https://raw.githubusercontent.com/kunjpatel007-gif/QuickSplit/main/screenshots/Screenshot_20260830_180348.jpg" width="200"/>
+  <img src="https://github.com/kunjpatel007-gif/QuickSplit/blob/main/screenshots/Screenshot_20260830_180348.jpg?raw=true" width="200"/>
   &nbsp;&nbsp;&nbsp;
-  <img src="https://raw.githubusercontent.com/kunjpatel007-gif/QuickSplit/main/screenshots/Screenshot_20260830_180355.jpg" width="200"/>
+  <img src="https://github.com/kunjpatel007-gif/QuickSplit/blob/main/screenshots/Screenshot_20260830_180355.jpg?raw=true" width="200"/>
 </div>
 <br>
 <div align="center">
-  <img src="https://raw.githubusercontent.com/kunjpatel007-gif/QuickSplit/main/screenshots/Screenshot_20260830_180401.jpg" width="200"/>
+  <img src="https://github.com/kunjpatel007-gif/QuickSplit/blob/main/screenshots/Screenshot_20260830_180401.jpg?raw=true" width="200"/>
 </div>
 
 ---
