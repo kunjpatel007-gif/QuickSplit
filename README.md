@@ -1,6 +1,9 @@
 # QuickSplit
 
-**Want to try it out?** [Download the latest APK](https://github.com/kunjpatel007-gif/QuickSplit/actions/workflows/build_apk.yml) (just click the newest green run and grab the `release-apks` zip at the bottom).
+**Want to try it out?** Download the latest optimized APKs below:
+* [📱 Download APK for ARM64 (Most Modern Phones)](https://github.com/kunjpatel007-gif/QuickSplit/raw/main/releases/app-arm64-v8a-release.apk)
+* [📱 Download APK for ARM32 (Older Phones)](https://github.com/kunjpatel007-gif/QuickSplit/raw/main/releases/app-armeabi-v7a-release.apk)
+* [💻 Download APK for x86_64 (Emulators)](https://github.com/kunjpatel007-gif/QuickSplit/raw/main/releases/app-x86_64-release.apk)
 
 
 QuickSplit is an offline-first expense splitting app built for college campuses and friend groups. It handles shared expenses, peer-to-peer ledger syncing, and UPI settlements entirely on-device without needing a backend server.
