@@ -17,6 +17,7 @@ class AnalyticsScreen extends StatefulWidget {
 class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
+  bool _showOnlyMe = true;
 
   @override
   void initState() {
@@ -41,14 +42,31 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
     final expenses = expenseProvider.expenses;
     final balances = balanceProvider.balances;
     
+    final currentUser = userProvider.currentUser;
+    final currentUserId = currentUser?.id ?? -1;
+    final allSplits = balanceProvider.allSplits;
+
     double totalSpending = 0;
     Map<String, double> categoryTotals = {};
     double highestAmount = 0;
-    
+
     for (var exp in expenses) {
-      totalSpending += exp.totalAmount;
-      categoryTotals[exp.category] = (categoryTotals[exp.category] ?? 0) + exp.totalAmount;
-      if (exp.totalAmount > highestAmount) highestAmount = exp.totalAmount;
+      if (_showOnlyMe) {
+        // Find how much the current user was split for this expense
+        final mySplit = allSplits.firstWhere(
+            (s) => s.expenseId == exp.id && s.userId == currentUserId, 
+            orElse: () => ExpenseSplit(expenseId: -1, userId: -1, amountOwed: 0.0)
+        );
+        if (mySplit.amountOwed > 0) {
+            totalSpending += mySplit.amountOwed;
+            categoryTotals[exp.category] = (categoryTotals[exp.category] ?? 0) + mySplit.amountOwed;
+            if (mySplit.amountOwed > highestAmount) highestAmount = mySplit.amountOwed;
+        }
+      } else {
+        totalSpending += exp.totalAmount;
+        categoryTotals[exp.category] = (categoryTotals[exp.category] ?? 0) + exp.totalAmount;
+        if (exp.totalAmount > highestAmount) highestAmount = exp.totalAmount;
+      }
     }
 
     return Scaffold(
@@ -97,7 +115,48 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with SingleTickerProv
                   ),
                   const SizedBox(height: 16),
                   
-                  // Summary Row
+                  // TOGGLE My Analytics / Group Analytics
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2d261e),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _showOnlyMe = true),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              color: _showOnlyMe ? const Color(0xFFffb800) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text('MY ANALYTICS', style: GoogleFonts.jetBrainsMono(fontSize: 12, fontWeight: FontWeight.bold, color: _showOnlyMe ? Colors.black : const Color(0xFF9e8f78)), textAlign: TextAlign.center,),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _showOnlyMe = false),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              color: !_showOnlyMe ? const Color(0xFFffb800) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text('GROUP ANALYTICS', style: GoogleFonts.jetBrainsMono(fontSize: 12, fontWeight: FontWeight.bold, color: !_showOnlyMe ? Colors.black : const Color(0xFF9e8f78)), textAlign: TextAlign.center,),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Summary Row
                   Row(
                     children: [
                       Expanded(child: _buildMetricCard('TOTAL_VOL', CurrencyFormatter.format(totalSpending))),
