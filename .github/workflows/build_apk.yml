@@ -1,13 +1,6 @@
 name: Build Android Release
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - 'screenshots/**'
-      - '.gitignore'
   workflow_dispatch:
 
 jobs:
